@@ -8,6 +8,7 @@ import (
 
 type MyMain struct {
 	Thing string `flag:"thing" help:"does a thing"`
+	wing  string `flag:"wing" help:"does a wing"`
 	Bing  string `flag:"-" help:"shouldn't happen"`
 }
 
@@ -23,7 +24,7 @@ func TestCom(t *testing.T) {
 		t.Fatalf("flag 'thing' not properly defined")
 	}
 	com.Flags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Name == "bing" || flag.Name == "-" || flag.Usage == "shouldn't happen" {
+		if flag.Name == "bing" || flag.Name == "wing" || flag.Name == "-" || flag.Usage == "shouldn't happen" {
 			t.Fatalf("explicitly ignored flag is present: %v", flag)
 		}
 	})
