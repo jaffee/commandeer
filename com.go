@@ -15,49 +15,87 @@ import (
 func Cobra(main interface{}) (*cobra.Command, error) {
 	typ := reflect.TypeOf(main)
 	if typ.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("value must be Struct, but is %s", typ.Kind())
+		return nil, fmt.Errorf("value must be pointer to struct, but is %s", typ.Kind())
 	}
 
 	mainVal := reflect.ValueOf(main).Elem()
 	mainTyp := mainVal.Type()
+	if mainTyp.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("value must be pointer to struct, but is pointer to %s", typ.Kind())
+	}
 	com := &cobra.Command{
 		Use: strings.ToLower(mainTyp.Name()),
 		// TODO get short and long desc from docstrings somehow?
 	}
 	// TODO define RunE?
+	if ImplementsRunner(typ) {
+		com.RunE = func(cmd *cobra.Command, args []string) error {
+			return main.(Runner).Run()
+		}
+	}
 	flags := com.Flags()
-	SetFlags(flags, main)
-
+	err := SetFlags(flags, main)
+	if err != nil {
+		return nil, err
+	}
 	return com, nil
 }
 
 func ImplementsRunner(t reflect.Type) bool {
-	var run Runner
-	runType := reflect.TypeOf(run)
+	runType := reflect.TypeOf((*Runner)(nil)).Elem()
 	return t.Implements(runType)
 }
 
-func SetFlags(flags Flagger, main interface{}) {
+func SetFlags(flags Flagger, main interface{}) error {
 	mainVal := reflect.ValueOf(main).Elem()
 	mainTyp := mainVal.Type()
 
 	for i := 0; i < mainTyp.NumField(); i++ {
 		ft := mainTyp.Field(i)
 		f := mainVal.Field(i)
+		if ft.PkgPath != "" {
+			continue // this field is unexported
+		}
+		flagName := flagName(ft)
+		if flagName == "-" || flagName == "" {
+			continue // explicitly ignored
+		}
+		switch f.Interface().(type) {
+		case time.Duration:
+			p := f.Addr().Interface().(*time.Duration)
+			flags.DurationVar(p, flagName, time.Duration(f.Int()), flagHelp(ft))
+			continue
+		}
 		switch ft.Type.Kind() {
 		case reflect.String:
-			if ft.PkgPath != "" {
-				continue // this field is unexported
-			}
-			flagName := flagName(ft)
-			if flagName == "-" || flagName == "" {
-				continue // explicitly ignored
-			}
 			p := f.Addr().Interface().(*string)
 			flags.StringVar(p, flagName, f.String(), flagHelp(ft))
+		case reflect.Bool:
+			p := f.Addr().Interface().(*bool)
+			flags.BoolVar(p, flagName, f.Bool(), flagHelp(ft))
+		case reflect.Int:
+			p := f.Addr().Interface().(*int)
+			val := int(f.Int())
+			flags.IntVar(p, flagName, val, flagHelp(ft))
+		case reflect.Int64:
+			p := f.Addr().Interface().(*int64)
+			flags.Int64Var(p, flagName, f.Int(), flagHelp(ft))
+		case reflect.Float64:
+			p := f.Addr().Interface().(*float64)
+			flags.Float64Var(p, flagName, f.Float(), flagHelp(ft))
+		case reflect.Uint:
+			p := f.Addr().Interface().(*uint)
+			val := uint(f.Uint())
+			flags.UintVar(p, flagName, val, flagHelp(ft))
+		case reflect.Uint64:
+			p := f.Addr().Interface().(*uint64)
+			flags.Uint64Var(p, flagName, f.Uint(), flagHelp(ft))
+		case reflect.Struct:
+			return fmt.Errorf("struct typed fields currently unsupported")
+
 		}
 	}
-
+	return nil
 }
 
 func flagName(field reflect.StructField) (flagname string) {
@@ -69,6 +107,7 @@ func flagName(field reflect.StructField) (flagname string) {
 		return flagname
 	}
 	flagname = field.Name
+	// TODO convert from camel case to lower with dashes
 	return flagname
 }
 
