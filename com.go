@@ -27,7 +27,6 @@ func Cobra(main interface{}) (*cobra.Command, error) {
 		Use: strings.ToLower(mainTyp.Name()),
 		// TODO get short and long desc from docstrings somehow?
 	}
-	// TODO define RunE?
 	if ImplementsRunner(typ) {
 		com.RunE = func(cmd *cobra.Command, args []string) error {
 			return main.(Runner).Run()
@@ -47,6 +46,10 @@ func ImplementsRunner(t reflect.Type) bool {
 }
 
 func SetFlags(flags Flagger, main interface{}) error {
+	return setFlags(flags, main, "")
+}
+
+func setFlags(flags Flagger, main interface{}, prefix string) error {
 	mainVal := reflect.ValueOf(main).Elem()
 	mainTyp := mainVal.Type()
 
@@ -56,7 +59,7 @@ func SetFlags(flags Flagger, main interface{}) error {
 		if ft.PkgPath != "" {
 			continue // this field is unexported
 		}
-		flagName := flagName(ft)
+		flagName := flagName(ft, prefix)
 		if flagName == "-" || flagName == "" {
 			continue // explicitly ignored
 		}
@@ -91,19 +94,36 @@ func SetFlags(flags Flagger, main interface{}) error {
 			p := f.Addr().Interface().(*uint64)
 			flags.Uint64Var(p, flagName, f.Uint(), flagHelp(ft))
 		case reflect.Struct:
-			return fmt.Errorf("struct typed fields currently unsupported")
-
+			var newprefix string
+			if prefix != "" {
+				newprefix = prefix + "." + flagName
+			} else {
+				newprefix = flagName
+			}
+			err := setFlags(flags, f.Addr().Interface(), newprefix)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("encountered unsupported field type/kind: %#v at %s", f, prefix)
 		}
 	}
 	return nil
 }
 
-func flagName(field reflect.StructField) (flagname string) {
-	if flagname, ok := field.Tag.Lookup("flag"); ok {
+func flagName(field reflect.StructField, prefix string) (flagname string) {
+	var ok bool
+	// unnecessary and confusing... but awesome.
+	defer func() {
+		if prefix != "" {
+			flagname = prefix + "." + flagname
+		}
+	}()
+	if flagname, ok = field.Tag.Lookup("flag"); ok {
 		return flagname
 	}
 
-	if flagname, ok := field.Tag.Lookup("json"); ok {
+	if flagname, ok = field.Tag.Lookup("json"); ok {
 		return flagname
 	}
 	flagname = field.Name

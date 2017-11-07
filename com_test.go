@@ -20,6 +20,12 @@ type MyMain struct {
 	Auint     uint          `flag:"a-uint" help:"uint flag"`
 	Auint64   uint64        `flag:"a-uint64" help:"uint64 flag"`
 	Aduration time.Duration `flag:"a-duration" help:"duration flag"`
+
+	SubThing SubThing `flag:"subthing"`
+}
+
+type SubThing struct {
+	SubBool bool `flag:"a-bool" help:"nested boolean flag"`
 }
 
 func (m *MyMain) Run() error {
@@ -37,6 +43,9 @@ func TestCom(t *testing.T) {
 		Auint:     1,
 		Auint64:   987987987987,
 		Aduration: time.Second * 3,
+		SubThing: SubThing{
+			SubBool: true,
+		},
 	}
 	com, err := Cobra(mm)
 	if err != nil {
@@ -74,7 +83,12 @@ func TestCom(t *testing.T) {
 	if f.Name != "a-duration" || f.Usage != "duration flag" || f.DefValue != "3s" {
 		t.Fatalf("flag 'a-duration' not properly defined")
 	}
+	f = com.Flags().Lookup("subthing.a-bool")
+	if f.Name != "subthing.a-bool" || f.Usage != "nested boolean flag" || f.DefValue != "true" {
+		t.Fatalf("flag 'subthing.a-bool' not properly defined")
+	}
 	com.Flags().VisitAll(func(flag *pflag.Flag) {
+		fmt.Println(flag.Name)
 		if flag.Name == "bing" || flag.Name == "wing" || flag.Name == "-" || flag.Usage == "shouldn't happen" {
 			t.Fatalf("explicitly ignored flag is present: %v", flag)
 		}
