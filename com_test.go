@@ -119,3 +119,58 @@ func TestCobraFail(t *testing.T) {
 		t.Fatalf("Should have gotten an error passing pointer to map to Cobra")
 	}
 }
+
+func TestDowncaseAndDash(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "a",
+			expected: "a",
+		},
+		{
+			input:    "A",
+			expected: "a",
+		},
+		{
+			input:    "aB",
+			expected: "a-b",
+		},
+		{
+			input:    "Ba",
+			expected: "ba",
+		},
+		{
+			input:    "HelloFriend",
+			expected: "hello-friend",
+		},
+		{
+			input:    "helloFriend",
+			expected: "hello-friend",
+		},
+		{
+			input:    "AAA",
+			expected: "aaa",
+		},
+		{
+			input:    "myURL",
+			expected: "my-url",
+		},
+		{
+			input:    "MyURL",
+			expected: "my-url",
+		},
+		{
+			input:    "URLFinder",
+			expected: "url-finder",
+		},
+	}
+
+	for i, tst := range tests {
+		output := downcaseAndDash(tst.input)
+		if output != tst.expected {
+			t.Errorf("test: %d, '%v' is not '%v'", i, output, tst.expected)
+		}
+	}
+}

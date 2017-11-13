@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/spf13/cobra"
 )
@@ -50,6 +51,8 @@ func SetFlags(flags Flagger, main interface{}) error {
 }
 
 func setFlags(flags Flagger, main interface{}, prefix string) error {
+	// TODO add tracking of flag names to ensure no duplicates
+	// TODO assign short names in the case that Flagger also has *VarP methods. remember "h" is reserved.
 	mainVal := reflect.ValueOf(main).Elem()
 	mainTyp := mainVal.Type()
 
@@ -127,8 +130,31 @@ func flagName(field reflect.StructField, prefix string) (flagname string) {
 		return flagname
 	}
 	flagname = field.Name
-	// TODO convert from camel case to lower with dashes
-	return flagname
+
+	return downcaseAndDash(flagname)
+}
+
+func downcaseAndDash(input string) string {
+	ret := make([]rune, 0)
+	lastUpper := false
+	nextUpper := false
+	for i, chr := range input {
+		if i+1 < len(input) {
+			nextUpper = unicode.IsUpper(rune(input[i+1]))
+		}
+		if unicode.IsUpper(chr) {
+			if len(ret) == 0 || (lastUpper && nextUpper) {
+				ret = append(ret, unicode.ToLower(chr))
+			} else {
+				ret = append(ret, '-', unicode.ToLower(chr))
+			}
+			lastUpper = true
+		} else {
+			ret = append(ret, chr)
+			lastUpper = false
+		}
+	}
+	return string(ret)
 }
 
 func flagHelp(field reflect.StructField) (flaghelp string) {
