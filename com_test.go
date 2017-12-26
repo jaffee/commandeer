@@ -13,13 +13,15 @@ type MyMain struct {
 	wing  string `flag:"wing" help:"does a wing"`
 	Bing  string `flag:"-" help:"shouldn't happen"`
 
-	Abool     bool          `flag:"a-bool" help:"boolean flag"`
+	Abool     bool          `flag:"a-bool" help:"boolean flag" short:"b"`
 	Aint      int           `flag:"a-int" help:"int flag"`
 	Aint64    int64         `flag:"a-int64" help:"int64 flag"`
 	Afloat    float64       `flag:"a-float" help:"float flag"`
 	Auint     uint          `flag:"a-uint" help:"uint flag"`
 	Auint64   uint64        `flag:"a-uint64" help:"uint64 flag"`
 	Aduration time.Duration `flag:"a-duration" help:"duration flag"`
+
+	AStringSlice []string `help:"string slice flag"`
 
 	SubThing SubThing `flag:"subthing"`
 }
@@ -32,17 +34,32 @@ func (m *MyMain) Run() error {
 	return fmt.Errorf("mymain error")
 }
 
+func TestZeroStruct(t *testing.T) {
+	fs := pflag.NewFlagSet("myset", pflag.ContinueOnError)
+	mm := &MyMain{}
+	err := SetFlags(fs, mm)
+	if err != nil {
+		t.Fatalf("setting flags with zero MyMain: %v", err)
+	}
+	err = fs.Parse([]string{"-h"})
+	if err != nil && err != pflag.ErrHelp {
+		t.Fatalf("parsing help flag: %v", err)
+	}
+
+}
+
 func TestCom(t *testing.T) {
 
 	mm := &MyMain{
-		Thing:     "blahhh",
-		Abool:     true,
-		Aint:      -1,
-		Aint64:    -987987987987,
-		Afloat:    12.23,
-		Auint:     1,
-		Auint64:   987987987987,
-		Aduration: time.Second * 3,
+		Thing:        "blahhh",
+		Abool:        true,
+		Aint:         -1,
+		Aint64:       -987987987987,
+		Afloat:       12.23,
+		Auint:        1,
+		Auint64:      987987987987,
+		Aduration:    time.Second * 3,
+		AStringSlice: []string{"hello", "goodbye"},
 		SubThing: SubThing{
 			SubBool: true,
 		},
@@ -59,6 +76,10 @@ func TestCom(t *testing.T) {
 	if f.Name != "a-bool" || f.Usage != "boolean flag" || f.DefValue != "true" {
 		t.Fatalf("flag 'a-bool' not properly defined")
 	}
+	f = com.Flags().ShorthandLookup("b")
+	if f.Name != "a-bool" || f.Usage != "boolean flag" || f.DefValue != "true" {
+		t.Fatalf("shorthand for 'a-bool' not properly defined")
+	}
 	f = com.Flags().Lookup("a-int")
 	if f.Name != "a-int" || f.Usage != "int flag" || f.DefValue != "-1" {
 		t.Fatalf("flag 'a-int' not properly defined")
@@ -71,6 +92,10 @@ func TestCom(t *testing.T) {
 	if f.Name != "a-float" || f.Usage != "float flag" || f.DefValue != "12.23" {
 		t.Fatalf("flag 'a-float' not properly defined")
 	}
+	f = com.Flags().ShorthandLookup("f")
+	if f.Name != "a-float" || f.Usage != "float flag" || f.DefValue != "12.23" {
+		t.Fatalf("shorthand for 'a-float' not properly defined")
+	}
 	f = com.Flags().Lookup("a-uint")
 	if f.Name != "a-uint" || f.Usage != "uint flag" || f.DefValue != "1" {
 		t.Fatalf("flag 'a-uint' not properly defined")
@@ -82,6 +107,10 @@ func TestCom(t *testing.T) {
 	f = com.Flags().Lookup("a-duration")
 	if f.Name != "a-duration" || f.Usage != "duration flag" || f.DefValue != "3s" {
 		t.Fatalf("flag 'a-duration' not properly defined")
+	}
+	f = com.Flags().Lookup("a-string-slice")
+	if f.Name != "a-string-slice" || f.Usage != "string slice flag" || f.DefValue != "[hello,goodbye]" {
+		t.Fatalf("flag 'a-string-slice' not properly defined")
 	}
 	f = com.Flags().Lookup("subthing.a-bool")
 	if f.Name != "subthing.a-bool" || f.Usage != "nested boolean flag" || f.DefValue != "true" {
@@ -164,6 +193,26 @@ func TestDowncaseAndDash(t *testing.T) {
 		{
 			input:    "URLFinder",
 			expected: "url-finder",
+		},
+		{
+			input:    "AaURLFinder",
+			expected: "aa-url-finder",
+		},
+		{
+			input:    "aURLFinder",
+			expected: "a-url-finder",
+		},
+		{
+			input:    "AURLFinder",
+			expected: "aurl-finder", // NOTE: no easy way to handle this properly
+		},
+		{
+			input:    "KissAToad",
+			expected: "kiss-a-toad",
+		},
+		{
+			input:    "IAmAToad",
+			expected: "i-am-a-toad",
 		},
 	}
 

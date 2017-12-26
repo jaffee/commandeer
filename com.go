@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 )
@@ -46,13 +47,17 @@ func ImplementsRunner(t reflect.Type) bool {
 	return t.Implements(runType)
 }
 
-func SetFlags(flags Flagger, main interface{}) error {
-	return setFlags(flags, main, "")
+func ImplementsPflagger(t reflect.Type) bool {
+	pflagType := reflect.TypeOf((*PFlagger)(nil)).Elem()
+	return t.Implements(pflagType)
 }
 
-func setFlags(flags Flagger, main interface{}, prefix string) error {
+func SetFlags(flags Flagger, main interface{}) error {
+	return setFlags(newFlagTracker(flags), main, "")
+}
+
+func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 	// TODO add tracking of flag names to ensure no duplicates
-	// TODO assign short names in the case that Flagger also has *VarP methods. remember "h" is reserved.
 	mainVal := reflect.ValueOf(main).Elem()
 	mainTyp := mainVal.Type()
 
@@ -62,40 +67,135 @@ func setFlags(flags Flagger, main interface{}, prefix string) error {
 		if ft.PkgPath != "" {
 			continue // this field is unexported
 		}
-		flagName := flagName(ft, prefix)
+		flagName := flagName(ft)
 		if flagName == "-" || flagName == "" {
 			continue // explicitly ignored
 		}
+		shorthand, err := flags.short(ft, flagName)
+		if err != nil {
+			return fmt.Errorf("getting shorthand for '%v': %v", ft.Name, err)
+		}
+		if prefix != "" {
+			flagName = prefix + "." + flagName
+		}
+
+		// first check supported concrete types
 		switch f.Interface().(type) {
 		case time.Duration:
 			p := f.Addr().Interface().(*time.Duration)
-			flags.DurationVar(p, flagName, time.Duration(f.Int()), flagHelp(ft))
+			flags.duration(p, flagName, shorthand, time.Duration(f.Int()), flagHelp(ft))
+			continue
+		case net.IPMask:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support net.IPMask field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*net.IPMask)
+			flags.ipMask(p, flagName, shorthand, *p, flagHelp(ft))
+			continue
+		case net.IPNet:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support net.IPNet field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*net.IPNet)
+			flags.ipNet(p, flagName, shorthand, *p, flagHelp(ft))
+			continue
+		case net.IP:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support net.IP field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*net.IP)
+			flags.ip(p, flagName, shorthand, *p, flagHelp(ft))
+			continue
+		case []net.IP:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support []net.IP field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*[]net.IP)
+			flags.ipSlice(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
 		}
+
+		// now check basic kinds
 		switch ft.Type.Kind() {
 		case reflect.String:
 			p := f.Addr().Interface().(*string)
-			flags.StringVar(p, flagName, f.String(), flagHelp(ft))
+			flags.string(p, flagName, shorthand, f.String(), flagHelp(ft))
 		case reflect.Bool:
 			p := f.Addr().Interface().(*bool)
-			flags.BoolVar(p, flagName, f.Bool(), flagHelp(ft))
+			flags.bool(p, flagName, shorthand, f.Bool(), flagHelp(ft))
 		case reflect.Int:
 			p := f.Addr().Interface().(*int)
 			val := int(f.Int())
-			flags.IntVar(p, flagName, val, flagHelp(ft))
+			flags.int(p, flagName, shorthand, val, flagHelp(ft))
 		case reflect.Int64:
 			p := f.Addr().Interface().(*int64)
-			flags.Int64Var(p, flagName, f.Int(), flagHelp(ft))
+			flags.int64(p, flagName, shorthand, f.Int(), flagHelp(ft))
 		case reflect.Float64:
 			p := f.Addr().Interface().(*float64)
-			flags.Float64Var(p, flagName, f.Float(), flagHelp(ft))
+			flags.float64(p, flagName, shorthand, f.Float(), flagHelp(ft))
 		case reflect.Uint:
 			p := f.Addr().Interface().(*uint)
 			val := uint(f.Uint())
-			flags.UintVar(p, flagName, val, flagHelp(ft))
+			flags.uint(p, flagName, shorthand, val, flagHelp(ft))
 		case reflect.Uint64:
 			p := f.Addr().Interface().(*uint64)
-			flags.Uint64Var(p, flagName, f.Uint(), flagHelp(ft))
+			flags.uint64(p, flagName, shorthand, f.Uint(), flagHelp(ft))
+		case reflect.Slice:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support slice field at '%v' with stdlib flag pkg.", flagName)
+			}
+			switch ft.Type.Elem().Kind() {
+			case reflect.String:
+				p := f.Addr().Interface().(*[]string)
+				flags.stringSlice(p, flagName, shorthand, *p, flagHelp(ft))
+			case reflect.Bool:
+				p := f.Addr().Interface().(*[]bool)
+				flags.boolSlice(p, flagName, shorthand, *p, flagHelp(ft))
+			case reflect.Int:
+				p := f.Addr().Interface().(*[]int)
+				flags.intSlice(p, flagName, shorthand, *p, flagHelp(ft))
+			case reflect.Uint:
+				p := f.Addr().Interface().(*[]uint)
+				flags.uintSlice(p, flagName, shorthand, *p, flagHelp(ft))
+			default:
+				return fmt.Errorf("encountered unsupported slice type/kind: %#v at %s", f, prefix)
+			}
+		case reflect.Float32:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support float32 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*float32)
+			flags.float32(p, flagName, shorthand, *p, flagHelp(ft))
+		case reflect.Int32:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support int32 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*int32)
+			flags.int32(p, flagName, shorthand, *p, flagHelp(ft))
+		case reflect.Uint16:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support uint16 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*uint16)
+			flags.uint16(p, flagName, shorthand, *p, flagHelp(ft))
+		case reflect.Uint32:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support uint32 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*uint32)
+			flags.uint32(p, flagName, shorthand, *p, flagHelp(ft))
+		case reflect.Uint8:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support uint8 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*uint8)
+			flags.uint8(p, flagName, shorthand, *p, flagHelp(ft))
+		case reflect.Int8:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support int8 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*int8)
+			flags.int8(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Struct:
 			var newprefix string
 			if prefix != "" {
@@ -114,14 +214,11 @@ func setFlags(flags Flagger, main interface{}, prefix string) error {
 	return nil
 }
 
-func flagName(field reflect.StructField, prefix string) (flagname string) {
+// flagName finds a field's flag name. It first looks for a "flag" tag, then
+// tries to use the "json" tag, and final falls back to using the name of the
+// field after running it through "downcaseAndDash".
+func flagName(field reflect.StructField) (flagname string) {
 	var ok bool
-	// unnecessary and confusing... but awesome.
-	defer func() {
-		if prefix != "" {
-			flagname = prefix + "." + flagname
-		}
-	}()
 	if flagname, ok = field.Tag.Lookup("flag"); ok {
 		return flagname
 	}
@@ -134,6 +231,9 @@ func flagName(field reflect.StructField, prefix string) (flagname string) {
 	return downcaseAndDash(flagname)
 }
 
+// downcaseAndDash converts a field name (expected to be camel case) to an all
+// lower case flag name with dashes between words that were previously cameled.
+// It attempts to handle upper case acronyms properly as well.
 func downcaseAndDash(input string) string {
 	ret := make([]rune, 0)
 	lastUpper := false
@@ -157,6 +257,7 @@ func downcaseAndDash(input string) string {
 	return string(ret)
 }
 
+// flagHelp gets the help text from a field's tag or returns an empty string.
 func flagHelp(field reflect.StructField) (flaghelp string) {
 	if flaghelp, ok := field.Tag.Lookup("help"); ok {
 		return flaghelp
@@ -164,6 +265,161 @@ func flagHelp(field reflect.StructField) (flaghelp string) {
 	return ""
 }
 
+// flagTracker has methods for managing the set up of flags - it will utilize
+// pflag methods if flagger is a PFlagger, and set up short flags as well.
+type flagTracker struct {
+	flagger  Flagger
+	pflagger PFlagger
+	pflag    bool
+	shorts   map[rune]struct{}
+}
+
+// newFlagTracker sets up a flagTracker based on a flagger.
+func newFlagTracker(flagger Flagger) *flagTracker {
+	fTr := &flagTracker{
+		flagger: flagger,
+		shorts: map[rune]struct{}{
+			'h': struct{}{}, // "h" is always used for help, so we can't set it.
+		},
+	}
+	if ImplementsPflagger(reflect.TypeOf(flagger)) {
+		fTr.pflag = true
+		fTr.pflagger = flagger.(PFlagger)
+	}
+	return fTr
+}
+
+// short gets the shorthand for a flag. flagName is the non-prefixed name
+// returned by flagName.
+func (fTr *flagTracker) short(field reflect.StructField, flagName string) (letter string, err error) {
+	if short, ok := field.Tag.Lookup("short"); ok {
+		if short == "" {
+			return "", nil // explicitly set to no shorthand
+		}
+		runeVal, width := utf8.DecodeRuneInString(short)
+		if runeVal == utf8.RuneError || width > 1 {
+			return "", fmt.Errorf("'%s' is not a valid single ascii character.", short)
+		}
+		if _, ok := fTr.shorts[runeVal]; ok {
+			return "", fmt.Errorf("'%s' has already been used.", short)
+		}
+		fTr.shorts[runeVal] = struct{}{}
+		return short, nil
+	}
+	for _, chr := range flagName {
+		if _, ok := fTr.shorts[chr]; ok {
+			continue
+		}
+		// TODO if the lowercase version of first letter is taken, try upper case and vice versa
+		if unicode.IsLetter(chr) {
+			fTr.shorts[chr] = struct{}{}
+			return string(chr), nil
+		}
+	}
+	return "", nil // no shorthand char available, but that's ok
+}
+
+func (fTr *flagTracker) string(p *string, name, shorthand, value, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.StringVarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.StringVar(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) int(p *int, name, shorthand string, value int, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.IntVarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.IntVar(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) int64(p *int64, name, shorthand string, value int64, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.Int64VarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.Int64Var(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) bool(p *bool, name, shorthand string, value bool, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.BoolVarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.BoolVar(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) uint(p *uint, name, shorthand string, value uint, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.UintVarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.UintVar(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) uint64(p *uint64, name, shorthand string, value uint64, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.Uint64VarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.Uint64Var(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) float64(p *float64, name, shorthand string, value float64, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.Float64VarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.Float64Var(p, name, value, usage)
+	}
+}
+func (fTr *flagTracker) duration(p *time.Duration, name, shorthand string, value time.Duration, usage string) {
+	if fTr.pflag {
+		fTr.pflagger.DurationVarP(p, name, shorthand, value, usage)
+	} else {
+		fTr.flagger.DurationVar(p, name, value, usage)
+	}
+}
+
+func (fTr *flagTracker) stringSlice(p *[]string, name, shorthand string, value []string, usage string) {
+	fTr.pflagger.StringSliceVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) boolSlice(p *[]bool, name, shorthand string, value []bool, usage string) {
+	fTr.pflagger.BoolSliceVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) uintSlice(p *[]uint, name, shorthand string, value []uint, usage string) {
+	fTr.pflagger.UintSliceVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) intSlice(p *[]int, name, shorthand string, value []int, usage string) {
+	fTr.pflagger.IntSliceVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) ipSlice(p *[]net.IP, name, shorthand string, value []net.IP, usage string) {
+	fTr.pflagger.IPSliceVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) float32(p *float32, name, shorthand string, value float32, usage string) {
+	fTr.pflagger.Float32VarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) ipMask(p *net.IPMask, name, shorthand string, value net.IPMask, usage string) {
+	fTr.pflagger.IPMaskVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) ipNet(p *net.IPNet, name, shorthand string, value net.IPNet, usage string) {
+	fTr.pflagger.IPNetVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) ip(p *net.IP, name, shorthand string, value net.IP, usage string) {
+	fTr.pflagger.IPVarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) uint8(p *uint8, name, shorthand string, value uint8, usage string) {
+	fTr.pflagger.Uint8VarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) uint16(p *uint16, name, shorthand string, value uint16, usage string) {
+	fTr.pflagger.Uint16VarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) uint32(p *uint32, name, shorthand string, value uint32, usage string) {
+	fTr.pflagger.Uint32VarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) int8(p *int8, name, shorthand string, value int8, usage string) {
+	fTr.pflagger.Int8VarP(p, name, shorthand, value, usage)
+}
+func (fTr *flagTracker) int32(p *int32, name, shorthand string, value int32, usage string) {
+	fTr.pflagger.Int32VarP(p, name, shorthand, value, usage)
+}
+
+// Flagger is an interface satisfied by
 type Flagger interface {
 	StringVar(p *string, name string, value string, usage string)
 	IntVar(p *int, name string, value int, usage string)
@@ -176,21 +432,29 @@ type Flagger interface {
 }
 
 type PFlagger interface {
-	Flagger
-	StringSliceVar(p *[]string, name string, value []string, usage string)
-	BoolSliceVar(p *[]bool, name string, value []bool, usage string)
-	Float32Var(p *float32, name string, value float32, usage string)
-	IPMaskVar(p *net.IPMask, name string, value net.IPMask, usage string)
-	IPSliceVar(p *[]net.IP, name string, value []net.IP, usage string)
-	IPNetVar(p *net.IPNet, name string, value net.IPNet, usage string)
-	IPVar(p *net.IP, name string, value net.IP, usage string)
-	Int32Var(p *int32, name string, value int32, usage string)
-	Uint16Var(p *uint16, name string, value uint16, usage string)
-	Uint32Var(p *uint32, name string, value uint32, usage string)
-	Uint8Var(p *uint8, name string, value uint8, usage string)
-	UintSliceVar(p *[]uint, name string, value []uint, usage string)
-	IntSliceVar(p *[]int, name string, value []int, usage string)
-	Int8Var(p *int8, name string, value int8, usage string)
+	StringSliceVarP(p *[]string, name string, shorthand string, value []string, usage string)
+	BoolSliceVarP(p *[]bool, name string, shorthand string, value []bool, usage string)
+	UintSliceVarP(p *[]uint, name string, shorthand string, value []uint, usage string)
+	IntSliceVarP(p *[]int, name string, shorthand string, value []int, usage string)
+	IPSliceVarP(p *[]net.IP, name string, shorthand string, value []net.IP, usage string)
+	Float32VarP(p *float32, name string, shorthand string, value float32, usage string)
+	IPMaskVarP(p *net.IPMask, name string, shorthand string, value net.IPMask, usage string)
+	IPNetVarP(p *net.IPNet, name string, shorthand string, value net.IPNet, usage string)
+	IPVarP(p *net.IP, name string, shorthand string, value net.IP, usage string)
+	Int32VarP(p *int32, name string, shorthand string, value int32, usage string)
+	Uint16VarP(p *uint16, name string, shorthand string, value uint16, usage string)
+	Uint32VarP(p *uint32, name string, shorthand string, value uint32, usage string)
+	Uint8VarP(p *uint8, name string, shorthand string, value uint8, usage string)
+	Int8VarP(p *int8, name string, shorthand string, value int8, usage string)
+
+	StringVarP(p *string, name string, shorthand string, value string, usage string)
+	IntVarP(p *int, name string, shorthand string, value int, usage string)
+	Int64VarP(p *int64, name string, shorthand string, value int64, usage string)
+	BoolVarP(p *bool, name string, shorthand string, value bool, usage string)
+	UintVarP(p *uint, name string, shorthand string, value uint, usage string)
+	Uint64VarP(p *uint64, name string, shorthand string, value uint64, usage string)
+	Float64VarP(p *float64, name string, shorthand string, value float64, usage string)
+	DurationVarP(p *time.Duration, name string, shorthand string, value time.Duration, usage string)
 }
 
 type Runner interface {
