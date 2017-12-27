@@ -4,42 +4,24 @@ import (
 	"fmt"
 	"net"
 	"reflect"
-	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/spf13/cobra"
 )
 
-// Cobra takes a struct pointer (optionally with tagged fields), and produces a
-// cobra.Command with flags set up to populate the values of the struct.
-func Cobra(main interface{}) (*cobra.Command, error) {
+func SetFlags(flags Flagger, main interface{}) error {
 	typ := reflect.TypeOf(main)
 	if typ.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("value must be pointer to struct, but is %s", typ.Kind())
+		return fmt.Errorf("value must be pointer to struct, but is %s", typ.Kind())
 	}
 
 	mainVal := reflect.ValueOf(main).Elem()
 	mainTyp := mainVal.Type()
 	if mainTyp.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("value must be pointer to struct, but is pointer to %s", typ.Kind())
+		return fmt.Errorf("value must be pointer to struct, but is pointer to %s", typ.Kind())
 	}
-	com := &cobra.Command{
-		Use: strings.ToLower(mainTyp.Name()),
-		// TODO get short and long desc from docstrings somehow?
-	}
-	if ImplementsRunner(typ) {
-		com.RunE = func(cmd *cobra.Command, args []string) error {
-			return main.(Runner).Run()
-		}
-	}
-	flags := com.Flags()
-	err := SetFlags(flags, main)
-	if err != nil {
-		return nil, err
-	}
-	return com, nil
+
+	return setFlags(newFlagTracker(flags), main, "")
 }
 
 func ImplementsRunner(t reflect.Type) bool {
@@ -50,10 +32,6 @@ func ImplementsRunner(t reflect.Type) bool {
 func ImplementsPflagger(t reflect.Type) bool {
 	pflagType := reflect.TypeOf((*PFlagger)(nil)).Elem()
 	return t.Implements(pflagType)
-}
-
-func SetFlags(flags Flagger, main interface{}) error {
-	return setFlags(newFlagTracker(flags), main, "")
 }
 
 func setFlags(flags *flagTracker, main interface{}, prefix string) error {
