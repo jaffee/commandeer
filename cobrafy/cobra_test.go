@@ -109,3 +109,11 @@ func TestCobraFail(t *testing.T) {
 		t.Fatalf("Should have gotten an error passing pointer to map to Cobra")
 	}
 }
+
+func TestExecute(t *testing.T) {
+	mm := test.MyMain{Thing: "blah"}
+	err := Execute(&mm)
+	if err.Error() != "mymain error" {
+		t.Fatalf("wrong error executing MyMain: %v", err)
+	}
+}

@@ -38,3 +38,12 @@ func Cobra(main interface{}) (*cobra.Command, error) {
 	}
 	return com, nil
 }
+
+func Execute(main interface{}) error {
+	com, err := Cobra(main)
+	if err != nil {
+		return fmt.Errorf("getting command: %v", err)
+	}
+
+	return com.Execute()
+}
