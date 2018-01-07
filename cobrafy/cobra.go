@@ -11,7 +11,7 @@ import (
 
 // Cobra takes a struct pointer (optionally with tagged fields), and produces a
 // cobra.Command with flags set up to populate the values of the struct.
-func Cobra(main interface{}) (*cobra.Command, error) {
+func Command(main interface{}) (*cobra.Command, error) {
 	typ := reflect.TypeOf(main)
 	if typ.Kind() != reflect.Ptr {
 		return nil, fmt.Errorf("value must be pointer to struct, but is %s", typ.Kind())
@@ -40,7 +40,7 @@ func Cobra(main interface{}) (*cobra.Command, error) {
 }
 
 func Execute(main interface{}) error {
-	com, err := Cobra(main)
+	com, err := Command(main)
 	if err != nil {
 		return fmt.Errorf("getting command: %v", err)
 	}

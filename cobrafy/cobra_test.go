@@ -25,7 +25,7 @@ func TestCom(t *testing.T) {
 			SubBool: true,
 		},
 	}
-	com, err := Cobra(mm)
+	com, err := Command(mm)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,18 +93,18 @@ func TestCom(t *testing.T) {
 func TestCobraFail(t *testing.T) {
 	mm := test.MyMain{Thing: "blah"}
 
-	_, err := Cobra(mm)
+	_, err := Command(mm)
 	if err == nil {
 		t.Fatalf("Should have gotten an error passing non-pointer to Cobra")
 	}
 
 	m := make(map[string]int)
-	_, err = Cobra(m)
+	_, err = Command(m)
 	if err == nil {
 		t.Fatalf("Should have gotten an error passing map to Cobra")
 	}
 
-	_, err = Cobra(&m)
+	_, err = Command(&m)
 	if err == nil {
 		t.Fatalf("Should have gotten an error passing pointer to map to Cobra")
 	}
