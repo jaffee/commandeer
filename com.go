@@ -66,7 +66,10 @@ func RunArgs(flags Flagger, main interface{}, args []string) error {
 
 	if ImplementsRunner(reflect.TypeOf(main)) {
 		valList := reflect.ValueOf(main).MethodByName("Run").Call(nil)
-		return valList[0].Interface().(error)
+		if valList[0].Interface() != nil {
+			return valList[0].Interface().(error)
+		}
+		return nil
 	}
 	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
 }
