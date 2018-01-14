@@ -66,6 +66,6 @@ $ ./myapp
 #+END_SRC
 
 If you aren't allergic to external dependencies, you can also try
-`github.com/jaffee/commandeer/cobrafy` which pulls in the excellent [[https://github.com/spf13/cobra][Cobra]] and
+=github.com/jaffee/commandeer/cobrafy= which pulls in the excellent [[https://github.com/spf13/cobra][Cobra]] and
 [[https://github.com/spf13/pflag][pflag]] packages which will give you GNU/POSIX style flags and some other nice
 features should you care to use them.
