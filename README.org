@@ -68,4 +68,4 @@ $ ./myapp
 If you aren't allergic to external dependencies, you can also try
 =github.com/jaffee/commandeer/cobrafy= which pulls in the excellent [[https://github.com/spf13/cobra][Cobra]] and
 [[https://github.com/spf13/pflag][pflag]] packages which will give you GNU/POSIX style flags and some other nice
-features should you care to use them.
+features should you care to use them. See the [[https://godocs.org/github.com/commandeer/cobrafy][godocs]], or the [[https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go][myapp-cobrafy example]].
