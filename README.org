@@ -1,12 +1,9 @@
 Do you like to develop your Go apps as libraries with tiny main packages?
-
 Have you ever gotten frustrated keeping your flags up to date as your code evolves?
-
 Are you irked by the duplication of comments on struct fields and help strings for flags?
-
 Is it annoying to switch between your app's main and library packages?
 
-See the [[https://godoc.org/github.com/jaffee/commandeer][godocs]] for detailed usage, or just...
+You've come to the right place. See the [[https://godoc.org/github.com/jaffee/commandeer][godocs]] for detailed usage, or just...
 
 ** Try Commandeer!
 Here's how it works, define your app like so:
