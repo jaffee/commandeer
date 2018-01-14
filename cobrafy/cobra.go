@@ -22,8 +22,10 @@ func Command(main interface{}) (*cobra.Command, error) {
 	if mainTyp.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("value must be pointer to struct, but is pointer to %s", typ.Kind())
 	}
+	mainPkg := mainTyp.PkgPath()
+	mainPkgLast := mainPkg[strings.LastIndex(mainPkg, "/")+1:]
 	com := &cobra.Command{
-		Use: strings.ToLower(mainTyp.Name()),
+		Use: mainPkgLast,
 		// TODO get short and long desc from docstrings somehow?
 	}
 	if commandeer.ImplementsRunner(typ) {
