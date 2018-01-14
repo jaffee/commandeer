@@ -1,15 +1,36 @@
 package commandeer
 
 import (
+	"flag"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"time"
 	"unicode"
 	"unicode/utf8"
 )
 
-func SetFlags(flags Flagger, main interface{}) error {
+// Flags sets up the given Flagger (usually an instance of flag.FlagSet or
+// pflag.FlagSet). The second argument, "main", must be a pointer to a struct. A
+// flag will be created for each exported field of the struct which isn't
+// explicitly ignored.
+//
+// Struct tags are used to control the behavior of Flags(), though none are
+// necessary.
+
+// 1. The "help" tag on a field is used to populate the usage string for that
+// field's flag.
+//
+// 2. The "flag" tag on a field will be used as the name of that field's flag.
+// Set it to "-" to ignore this field when creating flags. If it does not exist,
+// the "json" tag will be used, and if it also does not exist, the field name
+// will be downcased and converted from camel case to be dash separated.
+//
+// 3. The "short" tag on a field will be used as the shorthand flag for that
+// field. It should be a single ascii character. This will only be used if the
+// Flagger is also a PFlagger.
+func Flags(flags Flagger, main interface{}) error {
 	typ := reflect.TypeOf(main)
 	if typ.Kind() != reflect.Ptr {
 		return fmt.Errorf("value must be pointer to struct, but is %s", typ.Kind())
@@ -24,12 +45,40 @@ func SetFlags(flags Flagger, main interface{}) error {
 	return setFlags(newFlagTracker(flags), main, "")
 }
 
+// Run runs "main" which must be a pointer to a struct which implements the
+// Runner interface. It first calls Flags to set up command line flags based on
+// "main" (see the documentation for Flags).
+func Run(main interface{}) error {
+	return RunArgs(flag.CommandLine, main, os.Args[1:])
+}
+
+// RunArgs is similar to Run, but the caller must specify their own flag set and
+// args to be parsed by that flag set.
+func RunArgs(flags Flagger, main interface{}, args []string) error {
+	err := Flags(flags, main)
+	if err != nil {
+		return fmt.Errorf("calling Flags: %v", err)
+	}
+	err = flags.Parse(args)
+	if err != nil {
+		return fmt.Errorf("parsing flags: %v", err)
+	}
+
+	if ImplementsRunner(reflect.TypeOf(main)) {
+		valList := reflect.ValueOf(main).MethodByName("Run").Call(nil)
+		return valList[0].Interface().(error)
+	}
+	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
+}
+
+// ImplementsRunner returns true if "t" implements the Runner interface and
+// false otherwise.
 func ImplementsRunner(t reflect.Type) bool {
 	runType := reflect.TypeOf((*Runner)(nil)).Elem()
 	return t.Implements(runType)
 }
 
-func ImplementsPflagger(t reflect.Type) bool {
+func implementsPflagger(t reflect.Type) bool {
 	pflagType := reflect.TypeOf((*PFlagger)(nil)).Elem()
 	return t.Implements(pflagType)
 }
@@ -260,7 +309,7 @@ func newFlagTracker(flagger Flagger) *flagTracker {
 			'h': struct{}{}, // "h" is always used for help, so we can't set it.
 		},
 	}
-	if ImplementsPflagger(reflect.TypeOf(flagger)) {
+	if implementsPflagger(reflect.TypeOf(flagger)) {
 		fTr.pflag = true
 		fTr.pflagger = flagger.(PFlagger)
 	}
@@ -397,8 +446,10 @@ func (fTr *flagTracker) int32(p *int32, name, shorthand string, value int32, usa
 	fTr.pflagger.Int32VarP(p, name, shorthand, value, usage)
 }
 
-// Flagger is an interface satisfied by
+// Flagger is an interface satisfied by flag.FlagSet and other implementations
+// of flags.
 type Flagger interface {
+	Parse([]string) error
 	StringVar(p *string, name string, value string, usage string)
 	IntVar(p *int, name string, value int, usage string)
 	Int64Var(p *int64, name string, value int64, usage string)
@@ -409,7 +460,10 @@ type Flagger interface {
 	DurationVar(p *time.Duration, name string, value time.Duration, usage string)
 }
 
+// PFlagger is an extension of the Flagger interface which is implemented by the
+// pflag package (github.com/ogier/pflag, or github.com/spf13/pflag)
 type PFlagger interface {
+	Parse([]string) error
 	StringSliceVarP(p *[]string, name string, shorthand string, value []string, usage string)
 	BoolSliceVarP(p *[]bool, name string, shorthand string, value []bool, usage string)
 	UintSliceVarP(p *[]uint, name string, shorthand string, value []uint, usage string)
@@ -435,6 +489,7 @@ type PFlagger interface {
 	DurationVarP(p *time.Duration, name string, shorthand string, value time.Duration, usage string)
 }
 
+// Runner must be implemented by things passed to the Run and RunArgs methods.
 type Runner interface {
 	Run() error
 }

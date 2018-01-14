@@ -1,6 +1,8 @@
 package commandeer
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/jaffee/commandeer/test"
@@ -10,7 +12,7 @@ import (
 func TestZeroStruct(t *testing.T) {
 	fs := pflag.NewFlagSet("myset", pflag.ContinueOnError)
 	mm := &test.MyMain{}
-	err := SetFlags(fs, mm)
+	err := Flags(fs, mm)
 	if err != nil {
 		t.Fatalf("setting flags with zero MyMain: %v", err)
 	}
@@ -93,5 +95,37 @@ func TestDowncaseAndDash(t *testing.T) {
 		if output != tst.expected {
 			t.Errorf("test: %d, '%v' is not '%v'", i, output, tst.expected)
 		}
+	}
+}
+
+type NonRunner struct {
+	A int
+}
+
+func TestRun(t *testing.T) {
+	tests := []struct {
+		main interface{}
+		err  string
+	}{
+		{
+			main: &test.MyMain{},
+			err:  "mymain error",
+		},
+		{
+			main: &NonRunner{},
+			err:  "called 'Run' with something which doesn't implement the 'Run() error' method.",
+		},
+		{
+			main: test.MyMain{},
+			err:  "calling Flags: value must be pointer to struct, but is struct",
+		},
+	}
+	for i, tst := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			err := RunArgs(pflag.NewFlagSet("tstSet", pflag.ContinueOnError), tst.main, os.Args[1:])
+			if err.Error() != tst.err {
+				t.Fatalf("expected '%s', got '%s'", tst.err, err.Error())
+			}
+		})
 	}
 }

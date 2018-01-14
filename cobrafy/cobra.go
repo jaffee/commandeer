@@ -32,13 +32,16 @@ func Command(main interface{}) (*cobra.Command, error) {
 		}
 	}
 	flags := com.Flags()
-	err := commandeer.SetFlags(flags, main)
+	err := commandeer.Flags(flags, main)
 	if err != nil {
 		return nil, err
 	}
+
 	return com, nil
 }
 
+// Execute creates a cobra.Command using cobrafy.Command and then calls its
+// Execute() method, returning the error.
 func Execute(main interface{}) error {
 	com, err := Command(main)
 	if err != nil {
