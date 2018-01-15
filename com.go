@@ -1,7 +1,7 @@
-// commandeer sets up command line flags based on the fields and field tags of a
-// struct. It helps ease common pains of CLI app development by allowing you to
-// unobtrusively define flags in a library package while having a tiny main
-// package which calls commandeer.Run* or commandeer.Flags.
+// Package commandeer sets up command line flags based on the fields and field
+// tags of a struct. It helps ease common pains of CLI app development by
+// allowing you to unobtrusively define flags in a library package while having
+// a tiny main package which calls commandeer.Run* or commandeer.Flags.
 //
 // Run is the usual interface to commandeer, but it requires you to pass in a
 // struct which has a "Run() error" method. RunArgs works similarly, but allows
@@ -320,7 +320,7 @@ func newFlagTracker(flagger Flagger) *flagTracker {
 	fTr := &flagTracker{
 		flagger: flagger,
 		shorts: map[rune]struct{}{
-			'h': struct{}{}, // "h" is always used for help, so we can't set it.
+			'h': {}, // "h" is always used for help, so we can't set it.
 		},
 	}
 	if implementsPflagger(reflect.TypeOf(flagger)) {
