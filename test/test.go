@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// MyMain defines a variety of different field types and exercises various
+// different tags.
 type MyMain struct {
 	Thing string `flag:"thing" help:"does a thing"`
 	wing  string `flag:"wing" help:"does a wing"`
@@ -23,10 +25,12 @@ type MyMain struct {
 	SubThing SubThing `flag:"subthing"`
 }
 
+// SubThing exists to test nested structs.
 type SubThing struct {
 	SubBool bool `flag:"a-bool" help:"nested boolean flag"`
 }
 
+// Run implements the Runner interface.
 func (m *MyMain) Run() error {
 	return fmt.Errorf("mymain error")
 }

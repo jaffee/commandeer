@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Cobra takes a struct pointer (optionally with tagged fields), and produces a
+// Command takes a struct pointer (optionally with tagged fields), and produces a
 // cobra.Command with flags set up to populate the values of the struct.
 func Command(main interface{}) (*cobra.Command, error) {
 	typ := reflect.TypeOf(main)

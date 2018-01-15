@@ -1,7 +1,7 @@
 ## Commandeer
-Commandeer sets up command line flags based on struct fields and tags.
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
+
+Commandeer sets up command line flags based on struct fields and tags.
 
 Do you...
  * like to develop Go apps as libraries with tiny main packages?
