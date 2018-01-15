@@ -64,7 +64,7 @@ Usage of ./myapp:
 
 $ ./myapp
 5 gophers stole my jeep!
-$ ./myapp
+$ ./myapp -num 3 -vehicle horse
 3 gophers stole my horse!
 ```
 
