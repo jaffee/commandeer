@@ -1,3 +1,14 @@
+// commandeer sets up command line flags based on the fields and field tags of a
+// struct. It helps ease common pains of CLI app development by allowing you to
+// unobtrusively define flags in a library package while having a tiny main
+// package which calls commandeer.Run* or commandeer.Flags.
+//
+// Run is the usual interface to commandeer, but it requires you to pass in a
+// struct which has a "Run() error" method. RunArgs works similarly, but allows
+// you to pass in the args to be parsed and the flag set to be used. In cases
+// where your struct doesn't have a Run() method, or you don't want to call it,
+// the Flags() function takes in a FlagSet and sets the flags based on the
+// passed in struct in the same way.
 package commandeer
 
 import (
@@ -18,7 +29,7 @@ import (
 //
 // Struct tags are used to control the behavior of Flags(), though none are
 // necessary.
-
+//
 // 1. The "help" tag on a field is used to populate the usage string for that
 // field's flag.
 //
