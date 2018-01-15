@@ -1,19 +1,19 @@
-** Commandeer
+## Commandeer
 Commandeer sets up command line flags based on struct fields and tags.
 
-<a href="https://goreportcard.com/report/github.com/jaffee/commandeer"><img class="badge" tag="github.com/jaffee/commandeer" src="https://goreportcard.com/badge/github.com/jaffee/commandeer"></a>
+[![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
 
 Do you...
-- like to develop Go apps as libraries with tiny main packages?
-- get frustrated keeping your flags up to date as your code evolves?
-- feel irked by the overlap between comments on struct fields and help strings for flags?
-- hate switching between your app's main and library packages?
+ * like to develop Go apps as libraries with tiny main packages?
+ * get frustrated keeping your flags up to date as your code evolves?
+ * feel irked by the overlap between comments on struct fields and help strings for flags?
+ * hate switching between your app's main and library packages?
 
-You might like Commandeer. See the [[https://godoc.org/github.com/jaffee/commandeer][godocs]] for detailed usage, or just...
+You might like Commandeer. See the [godocs](https://godoc.org/github.com/jaffee/commandeer) for detailed usage, or just...
 
-** Try It!
+## Try It!
 Here's how it works, define your app like so:
-#+BEGIN_SRC go
+```go
 package myapp
 
 import "fmt"
@@ -32,10 +32,10 @@ func (m *Main) Run() error {
 	fmt.Printf("%d gophers stole my %s!\n", m.Num, m.Vehicle)
 	return nil
 }
-#+END_SRC
+```
 
 and your main package:
-#+BEGIN_SRC go
+```go
 package main
 
 import (
@@ -51,10 +51,10 @@ func main() {
 		fmt.Println(err)
 	}
 }
-#+END_SRC
+```
 
 Now...
-#+BEGIN_SRC bash
+```bash
 $ ./myapp -h
 Usage of ./myapp:
   -num int
@@ -66,18 +66,17 @@ $ ./myapp
 5 gophers stole my jeep!
 $ ./myapp
 3 gophers stole my horse!
-#+END_SRC
+```
 
 Notice that Commandeer set up the default values for each flag based on the
-values in the struct passed to =Run=. 
+values in the struct passed to `Run`.
 
 Commandeer is set up for minimal dependency pollution - it uses only stdlib
 dependencies and is a few hundred lines of code itself. You need only import it
-from a tiny =main= package (as in the example), and shouldn't need to reference
+from a tiny `main` package (as in the example), and shouldn't need to reference
 it anywhere else.
 
 If you aren't allergic to external dependencies, you can also try
-=github.com/jaffee/commandeer/cobrafy= which pulls in the excellent [[https://github.com/spf13/cobra][Cobra]] and
-[[https://github.com/spf13/pflag][pflag]] packages giving you GNU/POSIX style flags and some other nice features
-should you care to use them. See the [[https://godocs.org/github.com/commandeer/cobrafy][godocs]], or the [[https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go][myapp-cobrafy example]].
-
+`github.com/jaffee/commandeer/cobrafy` which pulls in the excellent [Cobra](https://github.com/spf13/cobra) and
+[pflag](https://github.com/spf13/pflag) packages giving you GNU/POSIX style flags and some other nice features
+should you care to use them. See the [godocs](https://godocs.org/github.com/commandeer/cobrafy), or the [myapp-cobrafy example](https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go).
