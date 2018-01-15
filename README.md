@@ -9,7 +9,7 @@ Do you...
  * feel irked by the overlap between comments on struct fields and help strings for flags?
  * hate switching between your app's main and library packages?
 
-You might like Commandeer. See the [godocs](https://godoc.org/github.com/jaffee/commandeer) for detailed usage, or just...
+You might like Commandeer. See the [godoc](https://godoc.org/github.com/jaffee/commandeer) for detailed usage, or just...
 
 ## Try It!
 Here's how it works, define your app like so:
@@ -79,4 +79,4 @@ it anywhere else.
 If you aren't allergic to external dependencies, you can also try
 `github.com/jaffee/commandeer/cobrafy` which pulls in the excellent [Cobra](https://github.com/spf13/cobra) and
 [pflag](https://github.com/spf13/pflag) packages giving you GNU/POSIX style flags and some other nice features
-should you care to use them. See the [godocs](https://godocs.org/github.com/commandeer/cobrafy), or the [myapp-cobrafy example](https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go).
+should you care to use them. See the [godoc](https://godoc.org/github.com/jaffee/commandeer/cobrafy), or the [myapp-cobrafy example](https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go).
