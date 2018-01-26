@@ -1,7 +1,7 @@
 ## Commandeer
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
 
-![Image](https://i.imgur.com/mSiubM6.png)
+![Image](https://i.imgur.com/HY4lfDS.png)
 
 Commandeer sets up command line flags based on struct fields and tags.
 
