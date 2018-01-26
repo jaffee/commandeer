@@ -1,6 +1,8 @@
 ## Commandeer
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
 
+Go from ![This](https://i.imgur.com/bHihJbB.png) to [![this](https://i.imgur.com/XlI572n.png)] without manually defining flags.
+
 Commandeer sets up command line flags based on struct fields and tags.
 
 Do you...
@@ -80,3 +82,9 @@ If you aren't allergic to external dependencies, you can also try
 `github.com/jaffee/commandeer/cobrafy` which pulls in the excellent [Cobra](https://github.com/spf13/cobra) and
 [pflag](https://github.com/spf13/pflag) packages giving you GNU/POSIX style flags and some other nice features
 should you care to use them. See the [godoc](https://godoc.org/github.com/jaffee/commandeer/cobrafy), or the [myapp-cobrafy example](https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go).
+
+## Contributing
+Yes please!
+
+For small stuff, feel free to submit a PR directly. For larger things,
+especially API changes, it's best to make an issue first so it can be discussed.
