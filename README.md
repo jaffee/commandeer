@@ -1,7 +1,15 @@
 ## Commandeer
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
 
-Go from ![This](https://i.imgur.com/bHihJbB.png) to [![this](https://i.imgur.com/XlI572n.png)] without manually defining flags.
+Go from 
+
+![This](https://i.imgur.com/bHihJbB.png) 
+
+to 
+
+![this](https://i.imgur.com/g7PyLKb.png) 
+
+without manually defining flags.
 
 Commandeer sets up command line flags based on struct fields and tags.
 
