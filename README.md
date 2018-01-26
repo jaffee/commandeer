@@ -1,15 +1,22 @@
 ## Commandeer
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
 
-Go from 
-
-![This](https://i.imgur.com/bHihJbB.png) 
-
-to 
-
-![this](https://i.imgur.com/g7PyLKb.png) 
-
-without manually defining flags.
+```go
+//                Go From This                               //                 To This
+/***********************************************************//*********************************************/
+                                                            //  $ myapp -h
+// Main has a couple basic fields with tags which will     	//  Usage of myapp:
+// be used to set up flags with the given help strings.	   	//    -duration duration
+type Main struct {										   	//      	How long is it gone?
+	Num      int           `help:"How many does it take?"` 	//    -num int
+	Vehicle  string        `help:"What did they get?"`	   	//      	How many does it take? (default 5)
+	Running  bool          `help:"Is the vehicle working?"`	//    -running
+	Duration time.Duration `help:"How long is it gone?"`   	//      	Is the vehicle working?
+}                                                           //    -vehicle string
+                                                            //        What did they get? (default "jeep")
+/***********************************************************//*********************************************/
+//                                         without manually defining flags./
+```
 
 Commandeer sets up command line flags based on struct fields and tags.
 
