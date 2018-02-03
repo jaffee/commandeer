@@ -1,13 +1,24 @@
 package myapp
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
-// Main has a couple basic fields with tags which will be used to set up flags
-// with the given help strings.
-type Main struct {
-	Num     int    `help:"How many does it take?"`
-	Vehicle string `help:"What did they get?"`
-}
+//                Go From This                              //                 To This
+/***********************************************************/ /********************************************/
+//  $ myapp -h
+//  Usage of myapp:
+type MyApp struct { //    -duration duration
+	Num      int           `help:"How many does it take?"`  //          How long is it gone?
+	Vehicle  string        `help:"What did they get?"`      //    -num int
+	Running  bool          `help:"Is the vehicle working?"` //          How many does it take? (default 5)
+	Duration time.Duration `help:"How long is it gone?"`    //    -running
+} //          Is the vehicle working?
+//    -vehicle string
+//          What did they get? (default "jeep")
+/***********************************************************/ /********************************************/
+//                                         without manually defining flags.
 
 // NewMain makes a Main and sets up the default values (which will be used by
 // commandeer as flag defaults).
