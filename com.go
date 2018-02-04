@@ -207,6 +207,12 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			}
 			p := f.Addr().Interface().(*float32)
 			flags.float32(p, flagName, shorthand, *p, flagHelp(ft))
+		case reflect.Int16:
+			if !flags.pflag {
+				return fmt.Errorf("cannot support int16 field at '%v' with stdlib flag pkg.", flagName)
+			}
+			p := f.Addr().Interface().(*int16)
+			flags.int16(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int32:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support int32 field at '%v' with stdlib flag pkg.", flagName)
@@ -456,6 +462,9 @@ func (fTr *flagTracker) uint32(p *uint32, name, shorthand string, value uint32, 
 func (fTr *flagTracker) int8(p *int8, name, shorthand string, value int8, usage string) {
 	fTr.pflagger.Int8VarP(p, name, shorthand, value, usage)
 }
+func (fTr *flagTracker) int16(p *int16, name, shorthand string, value int16, usage string) {
+	fTr.pflagger.Int16VarP(p, name, shorthand, value, usage)
+}
 func (fTr *flagTracker) int32(p *int32, name, shorthand string, value int32, usage string) {
 	fTr.pflagger.Int32VarP(p, name, shorthand, value, usage)
 }
@@ -487,6 +496,7 @@ type PFlagger interface {
 	IPMaskVarP(p *net.IPMask, name string, shorthand string, value net.IPMask, usage string)
 	IPNetVarP(p *net.IPNet, name string, shorthand string, value net.IPNet, usage string)
 	IPVarP(p *net.IP, name string, shorthand string, value net.IP, usage string)
+	Int16VarP(p *int16, name string, shorthand string, value int16, usage string)
 	Int32VarP(p *int32, name string, shorthand string, value int32, usage string)
 	Uint16VarP(p *uint16, name string, shorthand string, value uint16, usage string)
 	Uint32VarP(p *uint32, name string, shorthand string, value uint32, usage string)
