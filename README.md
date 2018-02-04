@@ -1,5 +1,6 @@
 ## Commandeer
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaffee/commandeer)](https://goreportcard.com/report/github.com/jaffee/commandeer)
+[![GoDoc](https://godoc.org/github.com/jaffee/commandeer?status.svg)](https://godoc.org/github.com/jaffee/commandeer)
 
 ![Image](https://i.imgur.com/y6GmOGE.png)
 
