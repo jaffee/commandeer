@@ -75,26 +75,10 @@ func RunArgs(flags Flagger, main interface{}, args []string) error {
 		return fmt.Errorf("parsing flags: %v", err)
 	}
 
-	if ImplementsRunner(reflect.TypeOf(main)) {
-		valList := reflect.ValueOf(main).MethodByName("Run").Call(nil)
-		if valList[0].Interface() != nil {
-			return valList[0].Interface().(error)
-		}
-		return nil
+	if main, ok := main.(Runner); ok {
+		return main.Run()
 	}
 	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
-}
-
-// ImplementsRunner returns true if "t" implements the Runner interface and
-// false otherwise.
-func ImplementsRunner(t reflect.Type) bool {
-	runType := reflect.TypeOf((*Runner)(nil)).Elem()
-	return t.Implements(runType)
-}
-
-func implementsPflagger(t reflect.Type) bool {
-	pflagType := reflect.TypeOf((*PFlagger)(nil)).Elem()
-	return t.Implements(pflagType)
 }
 
 func setFlags(flags *flagTracker, main interface{}, prefix string) error {
@@ -329,10 +313,7 @@ func newFlagTracker(flagger Flagger) *flagTracker {
 			'h': {}, // "h" is always used for help, so we can't set it.
 		},
 	}
-	if implementsPflagger(reflect.TypeOf(flagger)) {
-		fTr.pflag = true
-		fTr.pflagger = flagger.(PFlagger)
-	}
+	fTr.pflagger, fTr.pflag = flagger.(PFlagger)
 	return fTr
 }
 
