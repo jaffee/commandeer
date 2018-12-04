@@ -71,13 +71,22 @@ func NewMyMain() *MyMain {
 
 		SubThing: SubThing{
 			SubBool: true,
+			Sub: SubberThing{
+				SubBool2: true,
+			},
 		},
 	}
 }
 
 // SubThing exists to test nested structs.
 type SubThing struct {
-	SubBool bool `flag:"a-bool" help:"nested boolean flag"`
+	SubBool bool        `flag:"a-bool" help:"nested boolean flag"`
+	Sub     SubberThing `help:"further nested struct"`
+}
+
+// SubberThing exists to test even more nested structs.
+type SubberThing struct {
+	SubBool2 bool `flag:"b-bool" help:"more nested boolean flag"`
 }
 
 // Run implements the Runner interface.

@@ -334,6 +334,13 @@ func TestRunMyMain(t *testing.T) {
 		t.Fatalf("couldn't lookup 'subthing.a-bool'")
 	}
 
+	if f := flags.Lookup("subthing.sub.b-bool"); f != nil {
+		if f.DefValue != "true" {
+			t.Fatalf("'subthing.sub.b-bool' not defined properly, got '%v'", f.DefValue)
+		}
+	} else {
+		t.Fatalf("couldn't lookup 'subthing.sub.b-bool'")
+	}
 }
 
 func TestRunSimpleMain(t *testing.T) {

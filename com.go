@@ -228,13 +228,7 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			p := f.Addr().Interface().(*int8)
 			flags.int8(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Struct:
-			var newprefix string
-			if prefix != "" {
-				newprefix = prefix + "." + flagName
-			} else {
-				newprefix = flagName
-			}
-			err := setFlags(flags, f.Addr().Interface(), newprefix)
+			err := setFlags(flags, f.Addr().Interface(), flagName)
 			if err != nil {
 				return err
 			}
