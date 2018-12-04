@@ -78,7 +78,7 @@ func RunArgs(flags Flagger, main interface{}, args []string) error {
 	if main, ok := main.(Runner); ok {
 		return main.Run()
 	}
-	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
+	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method")
 }
 
 func setFlags(flags *flagTracker, main interface{}, prefix string) error {
@@ -112,28 +112,28 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			continue
 		case net.IPMask:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support net.IPMask field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support net.IPMask field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*net.IPMask)
 			flags.ipMask(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
 		case net.IPNet:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support net.IPNet field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support net.IPNet field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*net.IPNet)
 			flags.ipNet(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
 		case net.IP:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support net.IP field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support net.IP field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*net.IP)
 			flags.ip(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
 		case []net.IP:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support []net.IP field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support []net.IP field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*[]net.IP)
 			flags.ipSlice(p, flagName, shorthand, *p, flagHelp(ft))
@@ -167,7 +167,7 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			flags.uint64(p, flagName, shorthand, f.Uint(), flagHelp(ft))
 		case reflect.Slice:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support slice field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support slice field at '%v' with stdlib flag pkg", flagName)
 			}
 			switch ft.Type.Elem().Kind() {
 			case reflect.String:
@@ -187,43 +187,43 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			}
 		case reflect.Float32:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support float32 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support float32 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*float32)
 			flags.float32(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int16:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support int16 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support int16 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*int16)
 			flags.int16(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int32:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support int32 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support int32 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*int32)
 			flags.int32(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Uint16:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support uint16 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support uint16 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*uint16)
 			flags.uint16(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Uint32:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support uint32 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support uint32 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*uint32)
 			flags.uint32(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Uint8:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support uint8 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support uint8 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*uint8)
 			flags.uint8(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int8:
 			if !flags.pflag {
-				return fmt.Errorf("cannot support int8 field at '%v' with stdlib flag pkg.", flagName)
+				return fmt.Errorf("cannot support int8 field at '%v' with stdlib flag pkg", flagName)
 			}
 			p := f.Addr().Interface().(*int8)
 			flags.int8(p, flagName, shorthand, *p, flagHelp(ft))

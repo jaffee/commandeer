@@ -127,7 +127,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			main: &NonRunner{},
-			err:  "called 'Run' with something which doesn't implement the 'Run() error' method.",
+			err:  "called 'Run' with something which doesn't implement the 'Run() error' method",
 		},
 		{
 			main: test.MyMain{},
