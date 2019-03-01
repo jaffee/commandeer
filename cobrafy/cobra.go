@@ -28,9 +28,9 @@ func Command(main interface{}) (*cobra.Command, error) {
 		Use: mainPkgLast,
 		// TODO get short and long desc from docstrings somehow?
 	}
-	if commandeer.ImplementsRunner(typ) {
+	if mainRunner, ok := main.(commandeer.Runner); ok {
 		com.RunE = func(cmd *cobra.Command, args []string) error {
-			return main.(commandeer.Runner).Run()
+			return mainRunner.Run()
 		}
 	}
 	flags := com.Flags()
