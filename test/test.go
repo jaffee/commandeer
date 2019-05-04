@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+type Stringable int
+
+func (s Stringable) String() string {
+	return fmt.Sprintf("%d", s)
+}
+
 // MyMain defines a variety of different field types and exercises various
 // different tags.
 type MyMain struct {
@@ -38,6 +44,8 @@ type MyMain struct {
 	AIntSlice    []int
 	AUintSlice   []uint
 
+	AMap map[Stringable]int
+
 	SubThing SubThing `flag:"subthing"`
 }
 
@@ -69,20 +77,37 @@ func NewMyMain() *MyMain {
 		AIntSlice:    []int{9, -8, 7},
 		AUintSlice:   []uint{7, 8, 9},
 
+		AMap: map[Stringable]int{
+			1: 1,
+			2: 2,
+		},
+
 		SubThing: SubThing{
 			SubBool: true,
+			Sub: SubberThing{
+				SubBool2: true,
+			},
 		},
 	}
 }
 
 // SubThing exists to test nested structs.
 type SubThing struct {
-	SubBool bool `flag:"a-bool" help:"nested boolean flag"`
+	SubBool bool        `flag:"a-bool" help:"nested boolean flag"`
+	Sub     SubberThing `help:"further nested struct"`
+}
+
+// SubberThing exists to test even more nested structs.
+type SubberThing struct {
+	SubBool2 bool `flag:"b-bool" help:"more nested boolean flag"`
 }
 
 // Run implements the Runner interface.
 func (m *MyMain) Run() error {
-	return fmt.Errorf("mymain error")
+	if m == nil || m.Thing != "Don't Error" {
+		return fmt.Errorf("mymain error")
+	}
+	return nil
 }
 
 type SimpleMain struct {

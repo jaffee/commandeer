@@ -24,6 +24,22 @@ func TestZeroStruct(t *testing.T) {
 	}
 }
 
+func TestSetMap(t *testing.T) {
+	fs := pflag.NewFlagSet("myset", pflag.ContinueOnError)
+	mm := &test.MyMain{AMap: map[test.Stringable]int{1: 2}, Thing: "Don't Error"}
+	err := RunArgs(fs, mm, []string{"--a-map.1=3"})
+	if err != nil {
+		t.Fatalf("parsing map assignment: %v", err)
+	}
+	if mm.AMap[1] != 3 {
+		t.Fatalf("map assignment didn't work: %#v", mm.AMap)
+	}
+	err = fs.Parse([]string{"-h"})
+	if err != nil && err != pflag.ErrHelp {
+		t.Fatalf("parsing help flag: %v", err)
+	}
+}
+
 func TestNonStruct(t *testing.T) {
 	var a int = 4
 	err := Run(&a)
@@ -127,11 +143,11 @@ func TestRun(t *testing.T) {
 		},
 		{
 			main: &NonRunner{},
-			err:  "called 'Run' with something which doesn't implement the 'Run() error' method.",
+			err:  "called 'Run' with something which doesn't implement the 'Run() error' method",
 		},
 		{
 			main: test.MyMain{},
-			err:  "calling Flags: value must be pointer to struct, but is struct",
+			err:  "calling Flags: value must be map or pointer to struct, but is struct",
 		},
 	}
 	for i, tst := range tests {
@@ -334,6 +350,21 @@ func TestRunMyMain(t *testing.T) {
 		t.Fatalf("couldn't lookup 'subthing.a-bool'")
 	}
 
+	if f := flags.Lookup("subthing.sub.b-bool"); f != nil {
+		if f.DefValue != "true" {
+			t.Fatalf("'subthing.sub.b-bool' not defined properly, got '%v'", f.DefValue)
+		}
+	} else {
+		t.Fatalf("couldn't lookup 'subthing.sub.b-bool'")
+	}
+
+	if f := flags.Lookup("a-map.1"); f != nil {
+		if f.DefValue != "1" {
+			t.Fatalf("'a-map.1' not defined properly, got '%v'", f.DefValue)
+		}
+	} else {
+		t.Fatalf("couldn't lookup 'a-map.foo'")
+	}
 }
 
 func TestRunSimpleMain(t *testing.T) {
