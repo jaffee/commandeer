@@ -17,6 +17,7 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -61,6 +62,99 @@ func Flags(flags Flagger, main interface{}) error {
 // "main" (see the documentation for Flags).
 func Run(main interface{}) error {
 	return RunArgs(flag.CommandLine, main, os.Args[1:])
+}
+
+var replacer *strings.Replacer = strings.NewReplacer("-", "_", ".", "_")
+
+func envNorm(name string) string {
+	return replacer.Replace(name)
+}
+
+// loadEnv visits each flag in the FlagSet and sets its value based on
+// OS environment.
+func loadEnv(flagset *flag.FlagSet, prefix string) error {
+	var err error
+
+	flagset.VisitAll(func(f *flag.Flag) {
+		// skip rest if there is an error
+		if err != nil {
+			return
+		}
+		envString := envNorm(prefix + f.Name)
+		val, ok := os.LookupEnv(envString)
+		if ok {
+			err = flagset.Set(f.Name, val)
+			if err != nil {
+				err = fmt.Errorf("couldn't set %s to %s from env %s: %v", f.Name, val, envString, err)
+			}
+		}
+	})
+	return err
+}
+
+// RunEnv calls RunArgsEnv with args from the command line and the
+// default flag set.
+func RunEnv(main interface{}, envPrefix string, parseElsewhere func(main interface{}) error) error {
+	return RunArgsEnv(flag.CommandLine, main, os.Args[1:], envPrefix, parseElsewhere)
+}
+
+// RunArgsEnv is similar to RunArgs, but once flags are defined by
+// `Flags` it tries setting each from the OS environment based on a
+// prefix concatenated to the flag name. The flag name is normalized
+// by removing any dashes or dots and replacing them with
+// underscores. It differs from RunArgs in that it *must* take a
+// stdlib *FlagSet rather than the more generic Flagger. TODO: have a
+// way to use alternative flag implementations such as pflag.
+//
+// One may also pass a "configElsewhere" function which can operate on
+// main arbitrarily. The purpose of this is to load config values from
+// (e.g.) a file without this package needing to import packages for
+// parsing specific file formats.
+//
+// Flags set via args take the highest precedence, followed by the
+// environment, followed by configElsewhere (followed by
+// defaults). Command line args and environment variables are set on
+// main before it is passed to configElsewhere so that configElsewhere
+// can be configured (such as with a path to a config file). Once
+// configElsewhere runs, the environment and command line args are
+// re-set since they take higher precedence.
+func RunArgsEnv(flags *flag.FlagSet, main interface{}, args []string, envPrefix string, configElsewhere func(main interface{}) error) error {
+	// setup flags
+	err := Flags(flags, main)
+	if err != nil {
+		return fmt.Errorf("calling Flags: %v", err)
+	}
+	// set values based on environment
+	err = loadEnv(flags, envPrefix)
+	if err != nil {
+		return fmt.Errorf("loading environment: %v", err)
+	}
+	// set values based on command line
+	err = flags.Parse(args)
+	if err != nil {
+		return fmt.Errorf("parsing command line args: %v", err)
+	}
+	// set values with configElsewhere
+	if configElsewhere != nil {
+		err = configElsewhere(main)
+		if err != nil {
+			return fmt.Errorf("executing external parsing func")
+		}
+	}
+	// reset values with environment (precedence over configElsewhere)
+	err = loadEnv(flags, envPrefix)
+	if err != nil {
+		return fmt.Errorf("reloading environment: %v", err)
+	}
+	// reset values with command line args (highest precedence)
+	err = flags.Parse(args)
+	if err != nil {
+		return fmt.Errorf("reparsing command line args: %v", err)
+	}
+	if main, ok := main.(Runner); ok {
+		return main.Run()
+	}
+	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
 }
 
 // RunArgs is similar to Run, but the caller must specify their own flag set and

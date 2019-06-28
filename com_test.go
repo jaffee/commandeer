@@ -6,10 +6,139 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jaffee/commandeer/test"
 	"github.com/spf13/pflag"
 )
+
+func TestLoadEnv(t *testing.T) {
+	fs := flag.NewFlagSet("", flag.ExitOnError)
+
+	// create initial instance with defaults
+	mm := &test.SimpleMain{
+		One:   "one",
+		Two:   2,
+		Three: 3,
+		Four:  true,
+		Five:  5,
+		Six:   6,
+		Seven: 7.0,
+		Eight: time.Millisecond * 8,
+	}
+
+	// create flags with defaults by walking instance
+	err := Flags(fs, mm)
+	if err != nil {
+		t.Fatalf("making Flags: %v", err)
+	}
+
+	// set up environment
+	prefix := "COMMANDEER_"
+	err = os.Setenv("COMMANDEER_one", "z")
+	if err != nil {
+		t.Fatalf("setting up environment for set: %v", err)
+	}
+	defer os.Unsetenv("COMMANDEER_one")
+
+	// change values on instance by reading environment
+	err = loadEnv(fs, prefix)
+	if err != nil {
+		t.Fatalf("loading env: %v", err)
+	}
+
+	if mm.One != "z" {
+		t.Errorf("unexpected value for One: %s", mm.One)
+	}
+
+	// change values on instance by parsing command line
+	err = fs.Parse([]string{"-two", "99"})
+	if err != nil {
+		t.Fatalf("parsing command line: %v", err)
+	}
+
+	if mm.Two != 99 {
+		t.Fatalf("command line parsing didn't produce expected value 99, got %d", mm.Two)
+	}
+	// ensure that parsing command line doesn't vaules except one's that are specified.
+	if mm.One != "z" {
+		t.Errorf("unexpected value for One after command line parsing: %s", mm.One)
+	}
+
+	// simulate parsing a config file and setting values directly from it
+	mm.Three = 33
+	mm.Five = 55
+
+	// reload environment
+	err = os.Setenv("COMMANDEER_five", "56")
+	if err != nil {
+		t.Fatalf("setting up environment for set: %v", err)
+	}
+	defer os.Unsetenv("COMMANDEER_five")
+
+	err = os.Setenv("COMMANDEER_two", "23")
+	if err != nil {
+		t.Fatalf("setting up environment for set: %v", err)
+	}
+	defer os.Unsetenv("COMMANDEER_two")
+
+	err = loadEnv(fs, prefix)
+	if err != nil {
+		t.Fatalf("loading env: %v", err)
+	}
+
+	if mm.Five != 56 {
+		t.Fatalf("env reload failed, five is %d", mm.Five)
+	}
+	if mm.Two != 23 {
+		t.Fatalf("env reload should have clobbered two, but mm.Two is %d", mm.Two)
+	}
+
+	// re parse command line since env clobbered two value
+	err = fs.Parse([]string{"-two", "99"})
+	if err != nil {
+		t.Fatalf("parsing command line: %v", err)
+	}
+
+	if mm.Two != 99 {
+		t.Fatalf("command line reparsing didn't produce expected value 99, got %d", mm.Two)
+	}
+
+	// ensure that parsing command line doesn't vaules except one's that are specified.
+	if mm.One != "z" {
+		t.Errorf("unexpected value for One after command line parsing: %s", mm.One)
+	}
+}
+
+func TestRunArgsEnv(t *testing.T) {
+	mm := test.NewSimpleMain()
+	mustSetenv(t, "COMMANDEER_one", "envone")
+	mustSetenv(t, "COMMANDEER_two", "32")
+
+	fs := flag.NewFlagSet("", flag.ExitOnError)
+	err := RunArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3"}, "COMMANDEER_", nil)
+	if err.Error() != "SimpleMain error" {
+		t.Fatalf("RunArgsEnv: %v", err)
+	}
+
+	if mm.One != "envone" {
+		t.Fatalf("unexpected value for One: %s", mm.One)
+	}
+	if mm.Two != 24 {
+		t.Fatalf("unexpected value for Two: %d", mm.Two)
+	}
+
+	if mm.Seven != 7.3 {
+		t.Fatalf("unexpected value for Seven: %f", mm.Seven)
+	}
+}
+
+func mustSetenv(t *testing.T, key, val string) {
+	err := os.Setenv(key, val)
+	if err != nil {
+		t.Fatalf("setting env '%s' to '%s': %v", key, val, err)
+	}
+}
 
 func TestZeroStruct(t *testing.T) {
 	fs := pflag.NewFlagSet("myset", pflag.ContinueOnError)

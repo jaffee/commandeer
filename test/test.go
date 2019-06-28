@@ -108,3 +108,7 @@ func NewSimpleMain() *SimpleMain {
 		Eight: time.Millisecond * 8,
 	}
 }
+
+func (m *SimpleMain) Run() error {
+	return fmt.Errorf("SimpleMain error")
+}
