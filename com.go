@@ -92,14 +92,14 @@ func loadEnv(flagset *flag.FlagSet, prefix string) error {
 	return err
 }
 
-// RunEnv calls RunArgsEnv with args from the command line and the
+// LoadEnv calls LoadArgsEnv with args from the command line and the
 // default flag set.
-func RunEnv(main interface{}, envPrefix string, parseElsewhere func(main interface{}) error) error {
-	return RunArgsEnv(flag.CommandLine, main, os.Args[1:], envPrefix, parseElsewhere)
+func LoadEnv(main interface{}, envPrefix string, parseElsewhere func(main interface{}) error) error {
+	return LoadArgsEnv(flag.CommandLine, main, os.Args[1:], envPrefix, parseElsewhere)
 }
 
-// RunArgsEnv is similar to RunArgs, but once flags are defined by
-// `Flags` it tries setting each from the OS environment based on a
+// LoadArgsEnv uses Flags to define flags based on "main", then it
+// tries setting each flag's value from the OS environment based on a
 // prefix concatenated to the flag name. The flag name is normalized
 // by removing any dashes or dots and replacing them with
 // underscores. It differs from RunArgs in that it *must* take a
@@ -118,7 +118,7 @@ func RunEnv(main interface{}, envPrefix string, parseElsewhere func(main interfa
 // can be configured (such as with a path to a config file). Once
 // configElsewhere runs, the environment and command line args are
 // re-set since they take higher precedence.
-func RunArgsEnv(flags *flag.FlagSet, main interface{}, args []string, envPrefix string, configElsewhere func(main interface{}) error) error {
+func LoadArgsEnv(flags *flag.FlagSet, main interface{}, args []string, envPrefix string, configElsewhere func(main interface{}) error) error {
 	// setup flags
 	err := Flags(flags, main)
 	if err != nil {
@@ -151,10 +151,7 @@ func RunArgsEnv(flags *flag.FlagSet, main interface{}, args []string, envPrefix 
 	if err != nil {
 		return fmt.Errorf("reparsing command line args: %v", err)
 	}
-	if main, ok := main.(Runner); ok {
-		return main.Run()
-	}
-	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
+	return nil
 }
 
 // RunArgs is similar to Run, but the caller must specify their own flag set and

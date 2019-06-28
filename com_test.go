@@ -110,15 +110,15 @@ func TestLoadEnv(t *testing.T) {
 	}
 }
 
-func TestRunArgsEnv(t *testing.T) {
+func TestLoadArgsEnv(t *testing.T) {
 	mm := test.NewSimpleMain()
 	mustSetenv(t, "COMMANDEER_one", "envone")
 	mustSetenv(t, "COMMANDEER_two", "32")
 
 	fs := flag.NewFlagSet("", flag.ExitOnError)
-	err := RunArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3"}, "COMMANDEER_", nil)
-	if err.Error() != "SimpleMain error" {
-		t.Fatalf("RunArgsEnv: %v", err)
+	err := LoadArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3"}, "COMMANDEER_", nil)
+	if err != nil {
+		t.Fatalf("LoadArgsEnv: %v", err)
 	}
 
 	if mm.One != "envone" {
