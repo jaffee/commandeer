@@ -172,6 +172,19 @@ func RunArgs(flags Flagger, main interface{}, args []string) error {
 	return fmt.Errorf("called 'Run' with something which doesn't implement the 'Run() error' method.")
 }
 
+type stringSliceValue struct {
+	value *[]string
+}
+
+func (s stringSliceValue) Set(val string) error {
+	*s.value = strings.Split(val, ",")
+	return nil
+}
+
+func (s stringSliceValue) String() string {
+	return strings.Join(*s.value, ",")
+}
+
 func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 	// TODO add tracking of flag names to ensure no duplicates
 	mainVal := reflect.ValueOf(main).Elem()
@@ -229,6 +242,12 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			p := f.Addr().Interface().(*[]net.IP)
 			flags.ipSlice(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
+		case []string:
+			// special case support for string slice with stdlib flags
+			if stdflag, ok := flags.flagger.(*flag.FlagSet); !flags.pflag && ok {
+				stdflag.Var(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, flagHelp(ft))
+				continue
+			}
 		}
 
 		// now check basic kinds

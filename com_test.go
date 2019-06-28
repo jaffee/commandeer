@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -116,20 +117,24 @@ func TestLoadArgsEnv(t *testing.T) {
 	mustSetenv(t, "COMMANDEER_two", "32")
 
 	fs := flag.NewFlagSet("", flag.ExitOnError)
-	err := LoadArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3"}, "COMMANDEER_", nil)
+	err := LoadArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3", "-nine", "a,b,c"}, "COMMANDEER_", nil)
 	if err != nil {
 		t.Fatalf("LoadArgsEnv: %v", err)
 	}
 
 	if mm.One != "envone" {
-		t.Fatalf("unexpected value for One: %s", mm.One)
+		t.Errorf("unexpected value for One: %s", mm.One)
 	}
 	if mm.Two != 24 {
-		t.Fatalf("unexpected value for Two: %d", mm.Two)
+		t.Errorf("unexpected value for Two: %d", mm.Two)
 	}
 
 	if mm.Seven != 7.3 {
-		t.Fatalf("unexpected value for Seven: %f", mm.Seven)
+		t.Errorf("unexpected value for Seven: %f", mm.Seven)
+	}
+
+	if !reflect.DeepEqual(mm.Nine, []string{"a", "b", "c"}) {
+		t.Errorf("wrong value for Nine: %v", mm.Nine)
 	}
 }
 
@@ -528,6 +533,13 @@ func TestRunSimpleMain(t *testing.T) {
 		}
 	} else {
 		t.Fatalf("couldn't lookup 'eight'")
+	}
+	if f := flags.Lookup("nine"); f != nil {
+		if f.DefValue != "9,nine" {
+			t.Fatalf("wrong default value for 'nine': %v", f.DefValue)
+		}
+	} else {
+		t.Fatalf("couldn't look up 'nine'")
 	}
 
 }

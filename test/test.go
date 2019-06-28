@@ -94,6 +94,7 @@ type SimpleMain struct {
 	Six   uint64
 	Seven float64
 	Eight time.Duration
+	Nine  []string
 }
 
 func NewSimpleMain() *SimpleMain {
@@ -106,6 +107,7 @@ func NewSimpleMain() *SimpleMain {
 		Six:   6,
 		Seven: 7.0,
 		Eight: time.Millisecond * 8,
+		Nine:  []string{"9", "nine"},
 	}
 }
 
