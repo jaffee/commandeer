@@ -90,3 +90,8 @@ Yes please!
 
 For small stuff, feel free to submit a PR directly. For larger things,
 especially API changes, it's best to make an issue first so it can be discussed.
+
+## Similar projects
+
+ * https://github.com/anacrolix/tagflag
+ * https://github.com/octago/sflags
