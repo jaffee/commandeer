@@ -36,11 +36,11 @@ func TestLoadEnv(t *testing.T) {
 
 	// set up environment
 	prefix := "COMMANDEER_"
-	err = os.Setenv("COMMANDEER_one", "z")
+	err = os.Setenv("COMMANDEER_ONE", "z")
 	if err != nil {
 		t.Fatalf("setting up environment for set: %v", err)
 	}
-	defer os.Unsetenv("COMMANDEER_one")
+	defer os.Unsetenv("COMMANDEER_ONE")
 
 	// change values on instance by reading environment
 	err = loadEnv(fs, prefix)
@@ -71,17 +71,17 @@ func TestLoadEnv(t *testing.T) {
 	mm.Five = 55
 
 	// reload environment
-	err = os.Setenv("COMMANDEER_five", "56")
+	err = os.Setenv("COMMANDEER_FIVE", "56")
 	if err != nil {
 		t.Fatalf("setting up environment for set: %v", err)
 	}
-	defer os.Unsetenv("COMMANDEER_five")
+	defer os.Unsetenv("COMMANDEER_FIVE")
 
-	err = os.Setenv("COMMANDEER_two", "23")
+	err = os.Setenv("COMMANDEER_TWO", "23")
 	if err != nil {
 		t.Fatalf("setting up environment for set: %v", err)
 	}
-	defer os.Unsetenv("COMMANDEER_two")
+	defer os.Unsetenv("COMMANDEER_TWO")
 
 	err = loadEnv(fs, prefix)
 	if err != nil {
@@ -113,8 +113,8 @@ func TestLoadEnv(t *testing.T) {
 
 func TestLoadArgsEnv(t *testing.T) {
 	mm := test.NewSimpleMain()
-	mustSetenv(t, "COMMANDEER_one", "envone")
-	mustSetenv(t, "COMMANDEER_two", "32")
+	mustSetenv(t, "COMMANDEER_ONE", "envone")
+	mustSetenv(t, "COMMANDEER_TWO", "32")
 
 	fs := flag.NewFlagSet("", flag.ExitOnError)
 	err := LoadArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3", "-nine", "a,b,c"}, "COMMANDEER_", nil)

@@ -67,7 +67,7 @@ func Run(main interface{}) error {
 var replacer *strings.Replacer = strings.NewReplacer("-", "_", ".", "_")
 
 func envNorm(name string) string {
-	return replacer.Replace(name)
+	return strings.ToUpper(replacer.Replace(name))
 }
 
 // loadEnv visits each flag in the FlagSet and sets its value based on
