@@ -57,11 +57,24 @@ func Flags(flags Flagger, main interface{}) error {
 	return setFlags(newFlagTracker(flags), main, "")
 }
 
+type flagSet struct {
+	*flag.FlagSet
+}
+
+func (f *flagSet) Flags() (flags []string) {
+	f.VisitAll(func(f *flag.Flag) {
+		flags = append(flags, f.Name)
+	})
+	return flags
+}
+
+var _ = FlagNamer(&flagSet{})
+
 // Run runs "main" which must be a pointer to a struct which implements the
 // Runner interface. It first calls Flags to set up command line flags based on
 // "main" (see the documentation for Flags).
 func Run(main interface{}) error {
-	return RunArgs(flag.CommandLine, main, os.Args[1:])
+	return RunArgs(&flagSet{flag.CommandLine}, main, os.Args[1:])
 }
 
 var replacer *strings.Replacer = strings.NewReplacer("-", "_", ".", "_")
@@ -72,39 +85,35 @@ func envNorm(name string) string {
 
 // loadEnv visits each flag in the FlagSet and sets its value based on
 // OS environment.
-func loadEnv(flagset *flag.FlagSet, prefix string) error {
-	var err error
-
-	flagset.VisitAll(func(f *flag.Flag) {
-		// skip rest if there is an error
-		if err != nil {
-			return
-		}
-		envString := envNorm(prefix + f.Name)
-		val, ok := os.LookupEnv(envString)
-		if ok {
-			err = flagset.Set(f.Name, val)
-			if err != nil {
-				err = fmt.Errorf("couldn't set %s to %s from env %s: %v", f.Name, val, envString, err)
+func loadEnv(flagger Flagger, prefix string) (err error) {
+	if namer, ok := flagger.(FlagNamer); ok {
+		for _, name := range namer.Flags() {
+			envString := envNorm(prefix + name)
+			val, ok := os.LookupEnv(envString)
+			if ok {
+				err = flagger.Set(name, val)
+				if err != nil {
+					return fmt.Errorf("couldn't set %s to %s from env %s: %v", name, val, envString, err)
+				}
 			}
 		}
-	})
-	return err
+	} else {
+		return fmt.Errorf("unable to load flags from environment: flagger does not implement FlagNamer")
+	}
+	return nil
 }
 
 // LoadEnv calls LoadArgsEnv with args from the command line and the
 // default flag set.
 func LoadEnv(main interface{}, envPrefix string, parseElsewhere func(main interface{}) error) error {
-	return LoadArgsEnv(flag.CommandLine, main, os.Args[1:], envPrefix, parseElsewhere)
+	return LoadArgsEnv(&flagSet{flag.CommandLine}, main, os.Args[1:], envPrefix, parseElsewhere)
 }
 
 // LoadArgsEnv uses Flags to define flags based on "main", then it
 // tries setting each flag's value from the OS environment based on a
 // prefix concatenated to the flag name. The flag name is normalized
 // by removing any dashes or dots and replacing them with
-// underscores. It differs from RunArgs in that it *must* take a
-// stdlib *FlagSet rather than the more generic Flagger. TODO: have a
-// way to use alternative flag implementations such as pflag.
+// underscores.
 //
 // One may also pass a "configElsewhere" function which can operate on
 // main arbitrarily. The purpose of this is to load config values from
@@ -118,7 +127,7 @@ func LoadEnv(main interface{}, envPrefix string, parseElsewhere func(main interf
 // can be configured (such as with a path to a config file). Once
 // configElsewhere runs, the environment and command line args are
 // re-set since they take higher precedence.
-func LoadArgsEnv(flags *flag.FlagSet, main interface{}, args []string, envPrefix string, configElsewhere func(main interface{}) error) error {
+func LoadArgsEnv(flags Flagger, main interface{}, args []string, envPrefix string, configElsewhere func(main interface{}) error) error {
 	// setup flags
 	err := Flags(flags, main)
 	if err != nil {
@@ -247,9 +256,15 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			continue
 		case []string:
 			// special case support for string slice with stdlib flags
-			if stdflag, ok := flags.flagger.(*flag.FlagSet); !flags.pflag && ok {
-				stdflag.Var(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, flagHelp(ft))
-				continue
+			if !flags.pflag {
+				if stdflag, ok := flags.flagger.(*flag.FlagSet); ok {
+					stdflag.Var(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, flagHelp(ft))
+					continue
+				}
+				if stdflagcom, ok := flags.flagger.(*flagSet); ok {
+					stdflagcom.Var(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, flagHelp(ft))
+					continue
+				}
 			}
 		}
 
@@ -575,6 +590,7 @@ type Flagger interface {
 	Uint64Var(p *uint64, name string, value uint64, usage string)
 	Float64Var(p *float64, name string, value float64, usage string)
 	DurationVar(p *time.Duration, name string, value time.Duration, usage string)
+	Set(name string, value string) error
 }
 
 // PFlagger is an extension of the Flagger interface which is implemented by the
@@ -605,6 +621,11 @@ type PFlagger interface {
 	Uint64VarP(p *uint64, name string, shorthand string, value uint64, usage string)
 	Float64VarP(p *float64, name string, shorthand string, value float64, usage string)
 	DurationVarP(p *time.Duration, name string, shorthand string, value time.Duration, usage string)
+}
+
+// FlagNamer is an interface that Flaggers may use to list the available flags.
+type FlagNamer interface {
+	Flags() []string
 }
 
 // Runner must be implemented by things passed to the Run and RunArgs methods.
