@@ -14,7 +14,7 @@ import (
 )
 
 func TestLoadEnv(t *testing.T) {
-	fs := flag.NewFlagSet("", flag.ExitOnError)
+	fs := &flagSet{flag.NewFlagSet("", flag.ExitOnError)}
 
 	// create initial instance with defaults
 	mm := &test.SimpleMain{
@@ -116,7 +116,7 @@ func TestLoadArgsEnv(t *testing.T) {
 	mustSetenv(t, "COMMANDEER_ONE", "envone")
 	mustSetenv(t, "COMMANDEER_TWO", "32")
 
-	fs := flag.NewFlagSet("", flag.ExitOnError)
+	fs := &flagSet{flag.NewFlagSet("", flag.ExitOnError)}
 	err := LoadArgsEnv(fs, mm, []string{"-two=24", "-seven", "7.3", "-nine", "a,b,c"}, "COMMANDEER_", nil)
 	if err != nil {
 		t.Fatalf("LoadArgsEnv: %v", err)
