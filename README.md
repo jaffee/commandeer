@@ -85,6 +85,60 @@ If you aren't allergic to external dependencies, you can also try
 [pflag](https://github.com/spf13/pflag) packages giving you GNU/POSIX style flags and some other nice features
 should you care to use them. See the [godoc](https://godoc.org/github.com/jaffee/commandeer/cobrafy), or the [myapp-cobrafy example](https://github.com/jaffee/commandeer/blob/master/examples/myapp/cmd/myapp-cobrafy/main.go).
 
+## Features
+In addition to the `help` struct tag, you can use `flag` to override the computed flag name, e.g.
+
+```go
+type Main struct {
+	Num     int    `flag:"number"`
+}
+```
+
+You can also use `flag:"-"` to explicitly ignore fields from being used as flags, e.g.
+```go
+type Main struct {
+	Num     int    `flag:"-"`
+}
+```
+
+Nested structs are supported, by default the field names will be joined with "." to create the flag name, e.g.
+
+```go
+type Main struct {
+	Vehicle struct {
+		Color string
+		Weight int
+	}
+}
+```
+
+produces:
+
+```
+  -vehicle.color string
+    	
+  -vehicle.weight int
+```
+
+If you wish to avoid this prefix behavior (e.g. if you have an embedded struct field and you want to elevate its fields to the top level) you can use `flag:"!embed"`, e.g.
+
+```go
+type Main struct {
+	Vehicle struct {
+		Color string
+		Weight int
+	} `flag:"!embed"`
+}
+```
+
+which will produce:
+```
+  -color string
+    	
+  -weight int
+```
+
+
 ## Contributing
 Yes please!
 

@@ -342,7 +342,12 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			flags.int8(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Struct:
 			var newprefix string
-			if prefix != "" {
+			// TODO test, what happens if there are flag name
+			// collisions (e.g. the struct at this level and the
+			// !embed struct have a field with the same name)?
+			if flagName == "!embed" {
+				newprefix = prefix
+			} else if prefix != "" {
 				newprefix = prefix + "." + flagName
 			} else {
 				newprefix = flagName
