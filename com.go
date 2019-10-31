@@ -147,7 +147,7 @@ func LoadArgsEnv(flags Flagger, main interface{}, args []string, envPrefix strin
 	if configElsewhere != nil {
 		err = configElsewhere(main)
 		if err != nil {
-			return fmt.Errorf("executing external parsing func")
+			return fmt.Errorf("executing external parsing func: %v", err)
 		}
 	}
 	// reset values with environment (precedence over configElsewhere)
