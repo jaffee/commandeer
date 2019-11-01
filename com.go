@@ -197,6 +197,10 @@ func (s stringSliceValue) String() string {
 	return ""
 }
 
+func (s stringSliceValue) Type() string {
+	return "strings"
+}
+
 func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 	// TODO add tracking of flag names to ensure no duplicates
 	mainVal := reflect.ValueOf(main).Elem()
@@ -255,17 +259,14 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			flags.ipSlice(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
 		case []string:
-			// special case support for string slice with stdlib flags
-			if !flags.pflag {
-				if stdflag, ok := flags.flagger.(*flag.FlagSet); ok {
-					stdflag.Var(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, flagHelp(ft))
-					continue
-				}
-				if stdflagcom, ok := flags.flagger.(*flagSet); ok {
-					stdflagcom.Var(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, flagHelp(ft))
-					continue
-				}
-			}
+			// special case support for string slice. multiple calls
+			// to set the string slice value will replace it rather
+			// than appending to it (as they would with
+			// e.g. pflag). This is necessary for cascading
+			// configuration from multiple sources (e.g. file, env,
+			// command line).
+			flags.vvarp(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, shorthand, flagHelp(ft))
+			continue
 		}
 
 		// now check basic kinds
@@ -581,6 +582,43 @@ func (fTr *flagTracker) int16(p *int16, name, shorthand string, value int16, usa
 }
 func (fTr *flagTracker) int32(p *int32, name, shorthand string, value int32, usage string) {
 	fTr.pflagger.Int32VarP(p, name, shorthand, value, usage)
+}
+
+// vvarp reflectively calls VarP or Var on the underlying pflagger or
+// flagger. We can't add VarP to the pflagger interface because it
+// takes a pflag.Value and referring to that would necessitate
+// importing pflag. This was added because pflag's implementation of string slices appends to the string slice if it is called multiple times rather than resetting it.
+func (fTr *flagTracker) vvarp(value Value, name, shorthand, usage string) {
+	var flagImpl reflect.Value
+	if fTr.pflag {
+		flagImpl = reflect.ValueOf(fTr.pflagger)
+	} else {
+		flagImpl = reflect.ValueOf(fTr.flagger)
+	}
+	varPMethod := flagImpl.MethodByName("VarP")
+	zv := reflect.Value{}
+	if varPMethod != zv {
+		out := varPMethod.Call([]reflect.Value{reflect.ValueOf(value), reflect.ValueOf(name), reflect.ValueOf(shorthand), reflect.ValueOf(usage)})
+		if len(out) > 0 {
+			panic("unexpected result after reflectively calling Var on flagger implementation")
+		}
+		return
+	}
+	varMethod := flagImpl.MethodByName("Var")
+	if varMethod == zv {
+		panic("the given flag implementation does not have a Var method")
+	}
+	out := varMethod.Call([]reflect.Value{reflect.ValueOf(value), reflect.ValueOf(name), reflect.ValueOf(usage)})
+	if len(out) > 0 {
+		panic("unexpected result after reflectively calling Var on flagger implementation")
+	}
+}
+
+// Value is a copy of the pflag Value interface which is a superset of flag.Value
+type Value interface {
+	String() string
+	Set(string) error
+	Type() string
 }
 
 // Flagger is an interface satisfied by flag.FlagSet and other implementations
