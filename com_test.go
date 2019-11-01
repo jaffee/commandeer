@@ -535,7 +535,7 @@ func TestRunSimpleMain(t *testing.T) {
 		t.Fatalf("couldn't lookup 'eight'")
 	}
 	if f := flags.Lookup("nine"); f != nil {
-		if f.DefValue != "9,nine" {
+		if f.DefValue != "[9,nine]" {
 			t.Fatalf("wrong default value for 'nine': %v", f.DefValue)
 		}
 	} else {

@@ -192,7 +192,7 @@ func (s stringSliceValue) Set(val string) error {
 
 func (s stringSliceValue) String() string {
 	if s.value != nil {
-		return strings.Join(*s.value, ",")
+		return "[" + strings.Join(*s.value, ",") + "]"
 	}
 	return ""
 }
