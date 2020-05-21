@@ -541,5 +541,11 @@ func TestRunSimpleMain(t *testing.T) {
 	} else {
 		t.Fatalf("couldn't look up 'nine'")
 	}
-
+	if f := flags.Lookup("ten"); f != nil {
+		if f.DefValue != "1970-01-01T00:00:00Z" {
+			t.Fatalf("wrong default value for 'ten': %v", f.DefValue)
+		}
+	} else {
+		t.Fatalf("couldn't look up 'ten'")
+	}
 }
