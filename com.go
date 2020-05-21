@@ -12,6 +12,7 @@
 package commandeer
 
 import (
+	"encoding"
 	"flag"
 	"fmt"
 	"net"
@@ -225,47 +226,45 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 		}
 
 		// first check supported concrete types
-		switch f.Interface().(type) {
-		case time.Duration:
-			p := f.Addr().Interface().(*time.Duration)
+		switch p := f.Addr().Interface().(type) {
+		case *time.Duration:
 			flags.duration(p, flagName, shorthand, time.Duration(f.Int()), flagHelp(ft))
 			continue
-		case net.IPMask:
+		case *net.IPMask:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support net.IPMask field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*net.IPMask)
 			flags.ipMask(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
-		case net.IPNet:
+		case *net.IPNet:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support net.IPNet field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*net.IPNet)
 			flags.ipNet(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
-		case net.IP:
+		case *net.IP:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support net.IP field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*net.IP)
 			flags.ip(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
-		case []net.IP:
+		case *[]net.IP:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support []net.IP field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*[]net.IP)
 			flags.ipSlice(p, flagName, shorthand, *p, flagHelp(ft))
 			continue
-		case []string:
+		case *[]string:
 			// special case support for string slice. multiple calls
 			// to set the string slice value will replace it rather
 			// than appending to it (as they would with
 			// e.g. pflag). This is necessary for cascading
 			// configuration from multiple sources (e.g. file, env,
 			// command line).
-			flags.vvarp(stringSliceValue{value: f.Addr().Interface().(*[]string)}, flagName, shorthand, flagHelp(ft))
+			flags.vvarp(stringSliceValue{value: p}, flagName, shorthand, flagHelp(ft))
+			continue
+		case encodable:
+			flags.vvarp(encodedValue{p}, flagName, shorthand, flagHelp(ft))
 			continue
 		}
 
@@ -428,6 +427,35 @@ func flagHelp(field reflect.StructField) (flaghelp string) {
 		return flaghelp
 	}
 	return ""
+}
+
+type encodable interface {
+	encoding.TextMarshaler
+	encoding.TextUnmarshaler
+}
+
+type encodedValue struct {
+	encodable
+}
+
+func (v encodedValue) Set(str string) error {
+	return v.UnmarshalText([]byte(str))
+}
+
+func (v encodedValue) String() string {
+	dat, err := v.MarshalText()
+	if err != nil {
+		panic(err)
+	}
+	return string(dat)
+}
+
+func (v encodedValue) Type() string {
+	t := reflect.TypeOf(v.encodable)
+	if name := t.Name(); name != "" {
+		return name
+	}
+	return t.String()
 }
 
 // flagTracker has methods for managing the set up of flags - it will utilize
