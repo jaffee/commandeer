@@ -86,33 +86,55 @@ func (m *MyMain) Run() error {
 }
 
 type SimpleMain struct {
-	One   string
-	Two   int
-	Three int64
-	Four  bool
-	Five  uint
-	Six   uint64
-	Seven float64
-	Eight time.Duration
-	Nine  []string
-	Ten   time.Time
+	One    string
+	Two    int
+	Three  int64
+	Four   bool
+	Five   uint
+	Six    uint64
+	Seven  float64
+	Eight  time.Duration
+	Nine   []string
+	Ten    time.Time
+	Eleven MyDuration
 }
 
 func NewSimpleMain() *SimpleMain {
 	return &SimpleMain{
-		One:   "one",
-		Two:   2,
-		Three: 3,
-		Four:  true,
-		Five:  5,
-		Six:   6,
-		Seven: 7.0,
-		Eight: time.Millisecond * 8,
-		Nine:  []string{"9", "nine"},
-		Ten:   time.Unix(0, 0).UTC(),
+		One:    "one",
+		Two:    2,
+		Three:  3,
+		Four:   true,
+		Five:   5,
+		Six:    6,
+		Seven:  7.0,
+		Eight:  time.Millisecond * 8,
+		Nine:   []string{"9", "nine"},
+		Ten:    time.Unix(0, 0).UTC(),
+		Eleven: MyDuration(time.Second * 11),
 	}
 }
 
 func (m *SimpleMain) Run() error {
 	return fmt.Errorf("SimpleMain error")
+}
+
+type MyDuration time.Duration
+
+// String returns the string representation of the duration.
+func (d MyDuration) String() string { return time.Duration(d).String() }
+
+func (d *MyDuration) UnmarshalText(text []byte) error {
+	v, err := time.ParseDuration(string(text))
+	if err != nil {
+		return err
+	}
+
+	*d = MyDuration(v)
+	return nil
+}
+
+// MarshalText writes duration value in text format.
+func (d MyDuration) MarshalText() (text []byte, err error) {
+	return []byte(d.String()), nil
 }
