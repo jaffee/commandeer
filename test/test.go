@@ -71,13 +71,22 @@ func NewMyMain() *MyMain {
 
 		SubThing: SubThing{
 			SubBool: true,
+			Recursion: Recursion{
+				NestBool: true,
+			},
 		},
 	}
 }
 
 // SubThing exists to test nested structs.
 type SubThing struct {
-	SubBool bool `flag:"a-bool" help:"nested boolean flag"`
+	SubBool   bool      `flag:"a-bool" help:"nested boolean flag"`
+	Recursion Recursion `flag:"recursion"`
+}
+
+// Recursion exists to test multiple levels of nested structs.
+type Recursion struct {
+	NestBool bool `flag:"b-bool" help:"doubly nested boolean flag"`
 }
 
 // Run implements the Runner interface.
