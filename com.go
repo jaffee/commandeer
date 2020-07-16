@@ -362,8 +362,6 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			// !embed struct have a field with the same name)?
 			if flagName == "!embed" {
 				newprefix = prefix
-			} else if prefix != "" {
-				newprefix = prefix + "." + flagName
 			} else {
 				newprefix = flagName
 			}
