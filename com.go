@@ -494,16 +494,6 @@ func (fTr *flagTracker) short(field reflect.StructField, flagName string) (lette
 		fTr.shorts[runeVal] = struct{}{}
 		return short, nil
 	}
-	for _, chr := range flagName {
-		if _, ok := fTr.shorts[chr]; ok {
-			continue
-		}
-		// TODO if the lowercase version of first letter is taken, try upper case and vice versa
-		if unicode.IsLetter(chr) {
-			fTr.shorts[chr] = struct{}{}
-			return string(chr), nil
-		}
-	}
 	return "", nil // no shorthand char available, but that's ok
 }
 

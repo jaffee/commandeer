@@ -24,7 +24,7 @@ type MyMain struct {
 	Aint16    int16 `json:"anint16"`
 	Aint32    int32
 	Aint64    int64   `flag:"a-int64" help:"int64 flag"`
-	Afloat    float64 `flag:"a-float" help:"float flag"`
+	Afloat    float64 `flag:"a-float" help:"float flag" short:"f"`
 	Afloat32  float32
 	Auint     uint `flag:"a-uint" help:"uint flag"`
 	Auint8    uint8
