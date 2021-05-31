@@ -441,6 +441,9 @@ func (v encodedValue) Set(str string) error {
 }
 
 func (v encodedValue) String() string {
+	if v.encodable == nil {
+		return ""
+	}
 	dat, err := v.MarshalText()
 	if err != nil {
 		panic(err)
