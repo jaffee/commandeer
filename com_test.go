@@ -158,6 +158,20 @@ func TestZeroStruct(t *testing.T) {
 	}
 }
 
+func TestZeroStructStdlibFlag(t *testing.T) {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	mm := &test.SimpleMain{}
+	err := Flags(fs, mm)
+	if err != nil {
+		t.Fatalf("setting flags with zero MyMain: %v", err)
+	}
+
+	err = fs.Parse([]string{"-h"})
+	if err != nil && err != flag.ErrHelp {
+		t.Fatalf("parsing help flag: %v", err)
+	}
+}
+
 func TestNonStruct(t *testing.T) {
 	var a int = 4
 	err := Run(&a)
