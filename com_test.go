@@ -18,14 +18,15 @@ func TestLoadEnv(t *testing.T) {
 
 	// create initial instance with defaults
 	mm := &test.SimpleMain{
-		One:   "one",
-		Two:   2,
-		Three: 3,
-		Four:  true,
-		Five:  5,
-		Six:   6,
-		Seven: 7.0,
-		Eight: time.Millisecond * 8,
+		One:    "one",
+		Two:    2,
+		Three:  3,
+		Four:   true,
+		Five:   5,
+		Six:    6,
+		Seven:  7.0,
+		Eight:  time.Millisecond * 8,
+		Twelve: "blah",
 	}
 
 	// create flags with defaults by walking instance
@@ -53,7 +54,7 @@ func TestLoadEnv(t *testing.T) {
 	}
 
 	// change values on instance by parsing command line
-	err = fs.Parse([]string{"-two", "99"})
+	err = fs.Parse([]string{"-two", "99", "-twelve", "haha"})
 	if err != nil {
 		t.Fatalf("parsing command line: %v", err)
 	}
@@ -64,6 +65,9 @@ func TestLoadEnv(t *testing.T) {
 	// ensure that parsing command line doesn't vaules except one's that are specified.
 	if mm.One != "z" {
 		t.Errorf("unexpected value for One after command line parsing: %s", mm.One)
+	}
+	if mm.Twelve != "haha" {
+		t.Errorf("unexpected value for Twelve after cmd line parsing: %s", mm.Twelve)
 	}
 
 	// simulate parsing a config file and setting values directly from it
@@ -561,5 +565,15 @@ func TestRunSimpleMain(t *testing.T) {
 		}
 	} else {
 		t.Fatalf("couldn't look up 'ten'")
+	}
+	if f := flags.Lookup("eleven"); f != nil {
+		if f.DefValue != "11s" {
+			t.Fatalf("wrong default value for 'eleven': %v", f.DefValue)
+		}
+	}
+	if f := flags.Lookup("twelve"); f != nil {
+		if f.DefValue != "twelve" {
+			t.Fatalf("wrong default value for 'tweleve': %v", f.DefValue)
+		}
 	}
 }
