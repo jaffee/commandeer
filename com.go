@@ -271,27 +271,27 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 		// now check basic kinds
 		switch ft.Type.Kind() {
 		case reflect.String:
-			p := f.Addr().Interface().(*string)
+			p := (*string)(f.Addr().UnsafePointer())
 			flags.string(p, flagName, shorthand, f.String(), flagHelp(ft))
 		case reflect.Bool:
-			p := f.Addr().Interface().(*bool)
+			p := (*bool)(f.Addr().UnsafePointer())
 			flags.bool(p, flagName, shorthand, f.Bool(), flagHelp(ft))
 		case reflect.Int:
-			p := f.Addr().Interface().(*int)
+			p := (*int)(f.Addr().UnsafePointer())
 			val := int(f.Int())
 			flags.int(p, flagName, shorthand, val, flagHelp(ft))
 		case reflect.Int64:
-			p := f.Addr().Interface().(*int64)
+			p := (*int64)(f.Addr().UnsafePointer())
 			flags.int64(p, flagName, shorthand, f.Int(), flagHelp(ft))
 		case reflect.Float64:
-			p := f.Addr().Interface().(*float64)
+			p := (*float64)(f.Addr().UnsafePointer())
 			flags.float64(p, flagName, shorthand, f.Float(), flagHelp(ft))
 		case reflect.Uint:
-			p := f.Addr().Interface().(*uint)
+			p := (*uint)(f.Addr().UnsafePointer())
 			val := uint(f.Uint())
 			flags.uint(p, flagName, shorthand, val, flagHelp(ft))
 		case reflect.Uint64:
-			p := f.Addr().Interface().(*uint64)
+			p := (*uint64)(f.Addr().UnsafePointer())
 			flags.uint64(p, flagName, shorthand, f.Uint(), flagHelp(ft))
 		case reflect.Slice:
 			if !flags.pflag {
@@ -317,43 +317,43 @@ func setFlags(flags *flagTracker, main interface{}, prefix string) error {
 			if !flags.pflag {
 				return fmt.Errorf("cannot support float32 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*float32)
+			p := (*float32)(f.Addr().UnsafePointer())
 			flags.float32(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int16:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support int16 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*int16)
+			p := (*int16)(f.Addr().UnsafePointer())
 			flags.int16(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int32:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support int32 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*int32)
+			p := (*int32)(f.Addr().UnsafePointer())
 			flags.int32(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Uint16:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support uint16 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*uint16)
+			p := (*uint16)(f.Addr().UnsafePointer())
 			flags.uint16(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Uint32:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support uint32 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*uint32)
+			p := (*uint32)(f.Addr().UnsafePointer())
 			flags.uint32(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Uint8:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support uint8 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*uint8)
+			p := (*uint8)(f.Addr().UnsafePointer())
 			flags.uint8(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Int8:
 			if !flags.pflag {
 				return fmt.Errorf("cannot support int8 field at '%v' with stdlib flag pkg.", flagName)
 			}
-			p := f.Addr().Interface().(*int8)
+			p := (*int8)(f.Addr().UnsafePointer())
 			flags.int8(p, flagName, shorthand, *p, flagHelp(ft))
 		case reflect.Struct:
 			var newprefix string

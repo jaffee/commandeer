@@ -94,6 +94,8 @@ func (m *MyMain) Run() error {
 	return fmt.Errorf("mymain error")
 }
 
+type WrappedString string
+
 type SimpleMain struct {
 	One    string
 	Two    int
@@ -106,6 +108,7 @@ type SimpleMain struct {
 	Nine   []string
 	Ten    time.Time
 	Eleven MyDuration
+	Twelve WrappedString
 }
 
 func NewSimpleMain() *SimpleMain {
@@ -121,6 +124,7 @@ func NewSimpleMain() *SimpleMain {
 		Nine:   []string{"9", "nine"},
 		Ten:    time.Unix(0, 0).UTC(),
 		Eleven: MyDuration(time.Second * 11),
+		Twelve: "twelve",
 	}
 }
 
